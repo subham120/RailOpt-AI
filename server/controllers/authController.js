@@ -69,43 +69,57 @@ exports.login = [
       const { email, password } = req.body;
       const cleanEmail = (email || '').toLowerCase().trim();
 
-      // 1. Check if matching demo user credentials
+      // 1. Instant check for demo accounts (sub-millisecond login)
       const demoMatch = DEMO_USERS.find(
         (u) => u.email.toLowerCase() === cleanEmail && u.password === password
       );
 
-      let user = null;
+      if (demoMatch) {
+        const token = generateToken(demoMatch);
+        const userData = { ...demoMatch };
+        delete userData.password;
 
-      // Try to find user in MongoDB
+        // Async background audit log attempt (non-blocking)
+        try {
+          if (mongoose.connection.readyState === 1) {
+            AuditLog.create({
+              action: 'user_login',
+              userId: demoMatch._id,
+              userName: demoMatch.name,
+              targetType: 'user',
+              details: `User ${demoMatch.name} logged in`
+            }).catch(() => {});
+          }
+        } catch (_) {}
+
+        return res.json({
+          success: true,
+          data: {
+            user: userData,
+            token
+          }
+        });
+      }
+
+      // 2. Non-demo accounts: query database
+      let user = null;
       try {
         user = await User.findOne({ email: cleanEmail }).select('+password');
       } catch (dbErr) {
         console.warn('DB query during login failed:', dbErr.message);
       }
 
-      if (demoMatch) {
-        // Fast-path for verified demo accounts
-        if (!user) {
-          try {
-            user = await User.create({ ...demoMatch, email: cleanEmail });
-          } catch (createErr) {
-            user = { ...demoMatch };
-          }
-        }
-      } else {
-        // Regular user: verify against database password
-        if (!user) {
-          return res.status(401).json({ success: false, message: 'Invalid credentials' });
-        }
+      if (!user) {
+        return res.status(401).json({ success: false, message: 'Invalid credentials' });
+      }
 
-        if (typeof user.comparePassword === 'function') {
-          const isMatch = await user.comparePassword(password);
-          if (!isMatch) {
-            return res.status(401).json({ success: false, message: 'Invalid credentials' });
-          }
-        } else if (user.password !== password) {
+      if (typeof user.comparePassword === 'function') {
+        const isMatch = await user.comparePassword(password);
+        if (!isMatch) {
           return res.status(401).json({ success: false, message: 'Invalid credentials' });
         }
+      } else if (user.password !== password) {
+        return res.status(401).json({ success: false, message: 'Invalid credentials' });
       }
 
       if (user.isActive === false) {
@@ -118,14 +132,12 @@ exports.login = [
       try {
         await AuditLog.create({
           action: 'user_login',
-          userId: user._id || 'demo_user',
+          userId: user._id || 'user',
           userName: user.name || cleanEmail,
           targetType: 'user',
           details: `User ${user.name || cleanEmail} logged in`
         });
-      } catch (auditErr) {
-        // Ignore audit error
-      }
+      } catch (auditErr) {}
 
       const userData = typeof user.toJSON === 'function' ? user.toJSON() : { ...user };
       delete userData.password;
