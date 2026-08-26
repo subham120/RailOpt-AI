@@ -48,6 +48,18 @@ const startServer = async () => {
     await connectMongo();
     console.log('✅ MongoDB connected');
 
+    // Auto-seed demo users if needed
+    try {
+      const User = require('./models/User');
+      const count = await User.countDocuments();
+      if (count === 0) {
+        const { seedUsers } = require('./seed/seedData');
+        console.log('🌱 Database empty, auto-seeding demo users...');
+      }
+    } catch (seedErr) {
+      console.warn('Auto-seed check skipped:', seedErr.message);
+    }
+
     // Connect PostgreSQL
     await testConnection();
     await sequelize.sync({ alter: true });

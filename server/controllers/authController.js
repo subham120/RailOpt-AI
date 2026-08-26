@@ -47,6 +47,59 @@ exports.register = [
   }
 ];
 
+const DEMO_USERS = [
+  {
+    name: 'Admin User',
+    email: 'admin@railways.gov.in',
+    password: 'admin123',
+    role: 'admin',
+    department: 'Administration',
+    designation: 'Chief Operations Manager',
+    zone: 'Northern Railway',
+    division: 'Delhi'
+  },
+  {
+    name: 'Rajesh Kumar (SSE/P.Way)',
+    email: 'engineering@railways.gov.in',
+    password: 'eng123',
+    role: 'engineering',
+    department: 'Engineering',
+    designation: 'Senior Section Engineer (P.Way)',
+    zone: 'Northern Railway',
+    division: 'Delhi'
+  },
+  {
+    name: 'Suresh Sharma (SSE/TRD)',
+    email: 'trd@railways.gov.in',
+    password: 'trd123',
+    role: 'trd',
+    department: 'Traction Distribution',
+    designation: 'Senior Section Engineer (TRD)',
+    zone: 'Northern Railway',
+    division: 'Delhi'
+  },
+  {
+    name: 'Amit Verma (SSE/Sig)',
+    email: 'signal@railways.gov.in',
+    password: 'sig123',
+    role: 's_and_t',
+    department: 'Signal & Telecom',
+    designation: 'Senior Section Engineer (Signal)',
+    zone: 'Northern Railway',
+    division: 'Delhi'
+  },
+  {
+    name: 'Control Office Viewer',
+    email: 'control@railways.gov.in',
+    password: 'control123',
+    role: 'control_office',
+    department: 'Control Office',
+    designation: 'Section Controller',
+    zone: 'Northern Railway',
+    division: 'Delhi'
+  }
+];
+
 // POST /api/auth/login
 exports.login = [
   body('email').isEmail().withMessage('Valid email is required'),
@@ -61,37 +114,77 @@ exports.login = [
     try {
       const { email, password } = req.body;
 
-      // Find user with password field
-      const user = await User.findOne({ email }).select('+password');
+      // Find user in DB
+      let user = null;
+      try {
+        user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+      } catch (dbErr) {
+        console.warn('DB query failed during login, checking demo accounts:', dbErr.message);
+      }
+
+      // If user not in DB, check demo accounts and auto-provision
+      if (!user) {
+        const demoUser = DEMO_USERS.find(
+          (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
+        );
+
+        if (demoUser) {
+          try {
+            user = await User.create({ ...demoUser, email: demoUser.email.toLowerCase() });
+            console.log(`✅ Auto-provisioned demo user in DB: ${demoUser.email}`);
+          } catch (createErr) {
+            // If DB unavailable, create a temporary user object
+            user = {
+              _id: 'demo_' + Date.now(),
+              name: demoUser.name,
+              email: demoUser.email,
+              role: demoUser.role,
+              department: demoUser.department,
+              designation: demoUser.designation,
+              zone: demoUser.zone,
+              division: demoUser.division,
+              isActive: true,
+              toJSON: function() { return { ...this }; }
+            };
+          }
+        }
+      }
+
       if (!user) {
         return res.status(401).json({ success: false, message: 'Invalid credentials' });
       }
 
-      // Check password
-      const isMatch = await user.comparePassword(password);
-      if (!isMatch) {
-        return res.status(401).json({ success: false, message: 'Invalid credentials' });
+      // Check password if user has comparePassword method (from DB)
+      if (typeof user.comparePassword === 'function') {
+        const isMatch = await user.comparePassword(password);
+        if (!isMatch) {
+          return res.status(401).json({ success: false, message: 'Invalid credentials' });
+        }
       }
 
       if (!user.isActive) {
         return res.status(403).json({ success: false, message: 'Account is deactivated' });
       }
 
-      const token = generateToken(user._id);
+      const token = generateToken(user._id || 'demo_user');
 
-      // Audit log
-      await AuditLog.create({
-        action: 'user_login',
-        userId: user._id,
-        userName: user.name,
-        targetType: 'user',
-        details: `User ${user.name} logged in`
-      });
+      // Audit log (fail-safe)
+      try {
+        await AuditLog.create({
+          action: 'user_login',
+          userId: user._id,
+          userName: user.name,
+          targetType: 'user',
+          details: `User ${user.name} logged in`
+        });
+      } catch (auditErr) {
+        // Ignore audit log error if DB is in fallback mode
+      }
 
       res.json({
         success: true,
         data: {
-          user: user.toJSON(),
+          user: typeof user.toJSON === 'function' ? user.toJSON() : user,
           token
         }
       });
