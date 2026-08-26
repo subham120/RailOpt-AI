@@ -1,0 +1,31 @@
+services:
+  # 1. AI Optimization Engine (FastAPI + OR-Tools CP-SAT)
+  - type: web
+    name: railopt-ai-engine
+    runtime: python
+    buildCommand: "cd ai-engine && pip install -r requirements.txt"
+    startCommand: "cd ai-engine && uvicorn main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12
+
+  # 2. Backend API Gateway (Node.js + Express)
+  - type: web
+    name: railopt-backend-api
+    runtime: node
+    buildCommand: "cd server && npm install"
+    startCommand: "cd server && npm start"
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: AI_ENGINE_URL
+        fromService:
+          type: web
+          name: railopt-ai-engine
+          property: host
+      - key: MONGO_URI
+        sync: false
+      - key: DATABASE_URL
+        sync: false
