@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>/ — graphify tree viewer</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f9f9f9;
+      color: #333;
+    }
+    h1 {
+      margin: 20px 0 0 24px;
+      font-size: 2.2rem;
+      font-weight: bold;
+      color: #1e3a56;
+    }
+    .controls {
+      margin: 20px 0 15px 24px;
+    }
+    button {
+      margin-right: 10px;
+      padding: 8px 18px;
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background 0.2s ease-in-out;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    button:active {
+      background: #004085;
+    }
+    #tree-container {
+      width: calc(100vw - 48px); /* Adjust for body margin/padding */
+      height: 85vh;
+      overflow: auto;
+      border-radius: 8px;
+      background: #fff;
+      margin-left: 24px;
+      margin-right: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      border: 1px solid #ddd;
+    }
+    svg {
+      background: #fff;
+      border-radius: 8px;
+      display: block; /* Important for D3 */
+    }
+    .node circle {
+      stroke-width: 2.5px;
+    }
+    .node text { /* Base style for the <text> container */
+      font: 13px 'Segoe UI', sans-serif;
+      paint-order: stroke fill; /* Ensures text is readable over lines */
+      stroke: #fff; /* White halo */
+      stroke-width: 3px; /* Halo thickness */
+      stroke-linejoin: round;
+      stroke-opacity: 0.85; /* Halo opacity */
+    }
+    .link {
+      fill: none;
+      stroke-opacity: 0.7;
+      stroke-width: 2px;
+    }
+  </style>
+</head>
+<body>
+  <h1>/ — Knowledge Graph</h1>
+  <div class="controls">
+    <button onclick="expandAll()">Expand All</button>
+    <button onclick="collapseAll()">Collapse All</button>
+    <button onclick="resetView()">Reset View</button>
+  </div>
+  <div id="tree-container">
+    <svg id="tree-svg" width="6000" height="8000"></svg>
+  </div>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script>
+    const initialJsonData = {"name":"/","total_count":357,"children":[{"name":".agents","total_count":4,"children":[{"name":"rules","total_count":2,"children":[{"name":"graphify.md","total_count":2,"children":[{"name":"graphify","total_count":1,"children":[]},{"name":"rules/graphify.md","total_count":1,"children":[]}]}]},{"name":"workflows","total_count":2,"children":[{"name":"graphify.md","total_count":2,"children":[{"name":"Workflow: graphify","total_count":1,"children":[]},{"name":"workflows/graphify.md","total_count":1,"children":[]}]}]}]},{"name":"ai-engine","total_count":39,"children":[{"name":"main.py","total_count":10,"children":[{"name":"CorridorInput","total_count":1,"children":[]},{"name":"Generate optimized block schedule using constraint programming.","total_count":1,"children":[]},{"name":"health()","total_count":1,"children":[]},{"name":"optimize_schedule()","total_count":1,"children":[]},{"name":"OptimizeRequest","total_count":1,"children":[]},{"name":"prioritize_tasks()","total_count":1,"children":[]},{"name":"PrioritizeRequest","total_count":1,"children":[]},{"name":"Score and rank maintenance tasks by criticality/urgency.","total_count":1,"children":[]},{"name":"TaskInput","total_count":1,"children":[]},{"name":"WindowInput","total_count":1,"children":[]}]},{"name":"optimizer","total_count":10,"children":[{"name":"scheduler.py","total_count":9,"children":[{"name":"._build_reasoning()","total_count":1,"children":[]},{"name":"._schedule_corridors()","total_count":1,"children":[]},{"name":".optimize()","total_count":1,"children":[]},{"name":"Block Schedule Optimizer using OR-Tools CP-SAT and Railway Domain Logic.\u2026","total_count":1,"children":[]},{"name":"BlockScheduleOptimizer","total_count":1,"children":[]},{"name":"Constraint-based block schedule optimizer.","total_count":1,"children":[]},{"name":"Construct human-readable explainability string for the schedule recommendation.","total_count":1,"children":[]},{"name":"Group tasks into realistic, non-overlapping railway possession windows with\u2026","total_count":1,"children":[]},{"name":"Main optimization entry point.","total_count":1,"children":[]}]},{"name":"__init__.py","total_count":1,"children":[]}]},{"name":"scoring","total_count":19,"children":[{"name":"prioritizer.py","total_count":18,"children":[{"name":".__init__()","total_count":1,"children":[]},{"name":"._assign_tier()","total_count":1,"children":[]},{"name":"._compute_ml_score()","total_count":1,"children":[]},{"name":"._compute_rule_score()","total_count":1,"children":[]},{"name":"._generate_reasoning()","total_count":1,"children":[]},{"name":"._load_or_train_model()","total_count":1,"children":[]},{"name":"._train_model()","total_count":1,"children":[]},{"name":".score_tasks()","total_count":1,"children":[]},{"name":"Compute rule-based score with full breakdown.","total_count":1,"children":[]},{"name":"Generate human-readable explanation for the score.","total_count":1,"children":[]},{"name":"Generate synthetic training data and train XGBoost classifier.","total_count":1,"children":[]},{"name":"Get ML model's predicted urgency as a 0\u20131 score.","total_count":1,"children":[]},{"name":"Hybrid Criticality Scoring Engine for Railway Maintenance Tasks. Combines: 1.\u2026","total_count":1,"children":[]},{"name":"Hybrid rule-based + ML criticality scoring engine.","total_count":1,"children":[]},{"name":"Load pre-trained model or train a new one on synthetic data.","total_count":1,"children":[]},{"name":"Map composite score to urgency tier.","total_count":1,"children":[]},{"name":"PrioritizationEngine","total_count":1,"children":[]},{"name":"Score and rank a list of maintenance tasks.","total_count":1,"children":[]}]},{"name":"__init__.py","total_count":1,"children":[]}]}]},{"name":"client","total_count":108,"children":[{"name":".oxlintrc.json","total_count":8,"children":[{"name":"$schema","total_count":1,"children":[]},{"name":"oxc","total_count":1,"children":[]},{"name":"plugins","total_count":1,"children":[]},{"name":"react","total_count":1,"children":[]},{"name":"react/only-export-components","total_count":1,"children":[]},{"name":"react/rules-of-hooks","total_count":1,"children":[]},{"name":"rules","total_count":1,"children":[]},{"name":"warn","total_count":1,"children":[]}]},{"name":"package.json","total_count":55,"children":[{"name":"@fullcalendar/core","total_count":1,"children":[]},{"name":"@fullcalendar/core","total_count":1,"children":[]},{"name":"@fullcalendar/daygrid","total_count":1,"children":[]},{"name":"@fullcalendar/daygrid","total_count":1,"children":[]},{"name":"@fullcalendar/interaction","total_count":1,"children":[]},{"name":"@fullcalendar/interaction","total_count":1,"children":[]},{"name":"@fullcalendar/react","total_count":1,"children":[]},{"name":"@fullcalendar/react","total_count":1,"children":[]},{"name":"@fullcalendar/resource-timeline","total_count":1,"children":[]},{"name":"@fullcalendar/resource-timeline","total_count":1,"children":[]},{"name":"@fullcalendar/timegrid","total_count":1,"children":[]},{"name":"@fullcalendar/timegrid","total_count":1,"children":[]},{"name":"@tailwindcss/vite","total_count":1,"children":[]},{"name":"@tailwindcss/vite","total_count":1,"children":[]},{"name":"@types/react","total_count":1,"children":[]},{"name":"@types/react","total_count":1,"children":[]},{"name":"@types/react-dom","total_count":1,"children":[]},{"name":"@types/react-dom","total_count":1,"children":[]},{"name":"@vitejs/plugin-react","total_count":1,"children":[]},{"name":"@vitejs/plugin-react","total_count":1,"children":[]},{"name":"axios","total_count":1,"children":[]},{"name":"axios","total_count":1,"children":[]},{"name":"build","total_count":1,"children":[]},{"name":"dependencies","total_count":1,"children":[]},{"name":"dev","total_count":1,"children":[]},{"name":"devDependencies","total_count":1,"children":[]},{"name":"jspdf","total_count":1,"children":[]},{"name":"jspdf","total_count":1,"children":[]},{"name":"jspdf-autotable","total_count":1,"children":[]},{"name":"jspdf-autotable","total_count":1,"children":[]},{"name":"leaflet","total_count":1,"children":[]},{"name":"leaflet","total_count":1,"children":[]},{"name":"lint","total_count":1,"children":[]},{"name":"name","total_count":1,"children":[]},{"name":"oxlint","total_count":1,"children":[]},{"name":"oxlint","total_count":1,"children":[]},{"name":"preview","total_count":1,"children":[]},{"name":"private","total_count":1,"children":[]},{"name":"react","total_count":1,"children":[]},{"name":"react","total_count":1,"children":[]},{"name":"react-dom","total_count":1,"children":[]},{"name":"react-dom","total_count":1,"children":[]},{"name":"react-icons","total_count":1,"children":[]},{"name":"react-icons","total_count":1,"children":[]},{"name":"react-router-dom","total_count":1,"children":[]},{"name":"react-router-dom","total_count":1,"children":[]},{"name":"recharts","total_count":1,"children":[]},{"name":"recharts","total_count":1,"children":[]},{"name":"scripts","total_count":1,"children":[]},{"name":"tailwindcss","total_count":1,"children":[]},{"name":"tailwindcss","total_count":1,"children":[]},{"name":"type","total_count":1,"children":[]},{"name":"version","total_count":1,"children":[]},{"name":"vite","total_count":1,"children":[]},{"name":"vite","total_count":1,"children":[]}]},{"name":"README.md","total_count":4,"children":[{"name":"client/README.md","total_count":1,"children":[]},{"name":"Expanding the Oxlint configuration","total_count":1,"children":[]},{"name":"React + Vite","total_count":1,"children":[]},{"name":"React Compiler","total_count":1,"children":[]}]},{"name":"src","total_count":40,"children":[{"name":"App.jsx","total_count":2,"children":[{"name":"App()","total_count":1,"children":[]},{"name":"AppLayout()","total_count":1,"children":[]}]},{"name":"components","total_count":8,"children":[{"name":"layout","total_count":5,"children":[{"name":"Footer.jsx","total_count":1,"children":[{"name":"Footer()","total_count":1,"children":[]}]},{"name":"Header.jsx","total_count":1,"children":[{"name":"Header()","total_count":1,"children":[]}]},{"name":"ProtectedRoute.jsx","total_count":1,"children":[{"name":"ProtectedRoute()","total_count":1,"children":[]}]},{"name":"Sidebar.jsx","total_count":2,"children":[{"name":"ICONS","total_count":1,"children":[]},{"name":"Sidebar()","total_count":1,"children":[]}]}]},{"name":"map","total_count":3,"children":[{"name":"CorridorMap.jsx","total_count":3,"children":[{"name":"CORRIDOR_SEGMENTS","total_count":1,"children":[]},{"name":"CorridorMap()","total_count":1,"children":[]},{"name":"STATIONS","total_count":1,"children":[]}]}]}]},{"name":"context","total_count":3,"children":[{"name":"AuthContext.jsx","total_count":3,"children":[{"name":"AuthContext","total_count":1,"children":[]},{"name":"AuthProvider()","total_count":1,"children":[]},{"name":"useAuth()","total_count":1,"children":[]}]}]},{"name":"pages","total_count":9,"children":[{"name":"CorridorMapPage.jsx","total_count":2,"children":[{"name":"CORRIDOR_DETAILS","total_count":1,"children":[]},{"name":"CorridorMapPage()","total_count":1,"children":[]}]},{"name":"DataIntegration.jsx","total_count":1,"children":[{"name":"DataIntegration()","total_count":1,"children":[]}]},{"name":"Login.jsx","total_count":1,"children":[{"name":"Login()","total_count":1,"children":[]}]},{"name":"Prioritization.jsx","total_count":1,"children":[{"name":"Prioritization()","total_count":1,"children":[]}]},{"name":"Reports.jsx","total_count":1,"children":[{"name":"Reports()","total_count":1,"children":[]}]},{"name":"Requests.jsx","total_count":1,"children":[{"name":"Requests()","total_count":1,"children":[]}]},{"name":"Schedules.jsx","total_count":1,"children":[{"name":"Schedules()","total_count":1,"children":[]}]},{"name":"Dashboard.jsx","total_count":1,"children":[]}]},{"name":"services","total_count":7,"children":[{"name":"api.js","total_count":7,"children":[{"name":"api","total_count":1,"children":[]},{"name":"authAPI","total_count":1,"children":[]},{"name":"corridorAPI","total_count":1,"children":[]},{"name":"mockAPI","total_count":1,"children":[]},{"name":"reportAPI","total_count":1,"children":[]},{"name":"scheduleAPI","total_count":1,"children":[]},{"name":"taskAPI","total_count":1,"children":[]}]}]},{"name":"utils","total_count":10,"children":[{"name":"constants.js","total_count":10,"children":[{"name":"API_BASE","total_count":1,"children":[]},{"name":"CRITICALITY_CONFIG","total_count":1,"children":[]},{"name":"DEPARTMENTS","total_count":1,"children":[]},{"name":"formatDuration()","total_count":1,"children":[]},{"name":"NAV_ITEMS","total_count":1,"children":[]},{"name":"ROLE_LABELS","total_count":1,"children":[]},{"name":"ROLES","total_count":1,"children":[]},{"name":"SOURCE_SYSTEMS","total_count":1,"children":[]},{"name":"STATUS_CONFIG","total_count":1,"children":[]},{"name":"ZONAL_RAILWAYS","total_count":1,"children":[]}]}]},{"name":"main.jsx","total_count":1,"children":[]}]},{"name":"vite.config.js","total_count":1,"children":[]}]},{"name":"GEMINI.md","total_count":2,"children":[{"name":"GEMINI.md","total_count":1,"children":[]},{"name":"graphify","total_count":1,"children":[]}]},{"name":"package.json","total_count":14,"children":[{"name":"concurrently","total_count":1,"children":[]},{"name":"concurrently","total_count":1,"children":[]},{"name":"description","total_count":1,"children":[]},{"name":"dev","total_count":1,"children":[]},{"name":"dev:ai","total_count":1,"children":[]},{"name":"dev:client","total_count":1,"children":[]},{"name":"dev:server","total_count":1,"children":[]},{"name":"devDependencies","total_count":1,"children":[]},{"name":"install:all","total_count":1,"children":[]},{"name":"name","total_count":1,"children":[]},{"name":"private","total_count":1,"children":[]},{"name":"scripts","total_count":1,"children":[]},{"name":"seed","total_count":1,"children":[]},{"name":"version","total_count":1,"children":[]}]},{"name":"PROJECT_CONTEXT.md","total_count":8,"children":[{"name":"1. Executive Overview & Problem Statement","total_count":1,"children":[]},{"name":"2. Architecture & Tech Stack","total_count":1,"children":[]},{"name":"3. Core Communities & Architectural Hubs (God Nodes)","total_count":1,"children":[]},{"name":"4. Key Data Models","total_count":1,"children":[]},{"name":"5. Active Microservices & Local Ports","total_count":1,"children":[]},{"name":"Complete System Context & Knowledge Graph Handoff","total_count":1,"children":[]},{"name":"PROJECT_CONTEXT.md","total_count":1,"children":[]},{"name":"RailOpt AI \u2014 Indian Railways Maintenance Scheduling System","total_count":1,"children":[]}]},{"name":"README.md","total_count":20,"children":[{"name":"1. UX4G & GIGW Compliant Interface","total_count":1,"children":[]},{"name":"2. Multi-Department Data Ingestion","total_count":1,"children":[]},{"name":"3. Explainable Hybrid AI Prioritization","total_count":1,"children":[]},{"name":"4. Constraint-Based Block Schedule Optimizer (OR-Tools CP-SAT)","total_count":1,"children":[]},{"name":"5. Interactive Gantt Timeline & Multi-Horizon Views","total_count":1,"children":[]},{"name":"6. Role-Based Access Control (RBAC) & Transparent Audit Log","total_count":1,"children":[]},{"name":"Prerequisites","total_count":1,"children":[]},{"name":"README.md","total_count":1,"children":[]},{"name":"Step 1: Environment Setup","total_count":1,"children":[]},{"name":"Step 2: Backend & Database Seeding","total_count":1,"children":[]},{"name":"Step 3: Start the AI Optimization Microservice","total_count":1,"children":[]},{"name":"Step 4: Start the Frontend Client","total_count":1,"children":[]},{"name":"\ud83c\udf1f Key Features","total_count":1,"children":[]},{"name":"\ud83c\udfdb\ufe0f System Architecture","total_count":1,"children":[]},{"name":"\ud83d\udd00 Application Flowchart","total_count":1,"children":[]},{"name":"\ud83d\udd04 End-to-End Workflow Demonstration","total_count":1,"children":[]},{"name":"\ud83d\udd11 Demo Login Credentials","total_count":1,"children":[]},{"name":"\ud83d\ude80 Quick Start Guide","total_count":1,"children":[]},{"name":"\ud83d\ude86 AI-Powered Automatic Block Planning System \u2014 Indian Railways","total_count":1,"children":[]},{"name":"\ud83d\udee1\ufe0f License","total_count":1,"children":[]}]},{"name":"server","total_count":162,"children":[{"name":"config","total_count":4,"children":[{"name":"db.js","total_count":2,"children":[{"name":"connectMongo()","total_count":1,"children":[]},{"name":"mongoose","total_count":1,"children":[]}]},{"name":"pgDb.js","total_count":2,"children":[{"name":"testConnection()","total_count":1,"children":[]},{"name":"{ Sequelize }","total_count":1,"children":[]}]}]},{"name":"controllers","total_count":55,"children":[{"name":"authController.js","total_count":6,"children":[{"name":"AuditLog","total_count":1,"children":[]},{"name":"generateToken()","total_count":1,"children":[]},{"name":"getMe()","total_count":1,"children":[]},{"name":"jwt","total_count":1,"children":[]},{"name":"User","total_count":1,"children":[]},{"name":"{ body, validationResult }","total_count":1,"children":[]}]},{"name":"corridorController.js","total_count":7,"children":[{"name":"FALLBACK_SECTIONS","total_count":1,"children":[]},{"name":"generateFallbackWindows()","total_count":1,"children":[]},{"name":"getAllWindows()","total_count":1,"children":[]},{"name":"getCorridor()","total_count":1,"children":[]},{"name":"getCorridors()","total_count":1,"children":[]},{"name":"getTrafficData()","total_count":1,"children":[]},{"name":"{ CorridorBlock, BlockWindow, TrafficData }","total_count":1,"children":[]}]},{"name":"mockDataController.js","total_count":9,"children":[{"name":"AuditLog","total_count":1,"children":[]},{"name":"ingestExternalData()","total_count":1,"children":[]},{"name":"MaintenanceTask","total_count":1,"children":[]},{"name":"SECTIONS","total_count":1,"children":[]},{"name":"seedMockData()","total_count":1,"children":[]},{"name":"SMMS_DEFECTS","total_count":1,"children":[]},{"name":"TDMS_DEFECTS","total_count":1,"children":[]},{"name":"TMS_DEFECTS","total_count":1,"children":[]},{"name":"{ CorridorBlock, BlockWindow, TrafficData }","total_count":1,"children":[]}]},{"name":"reportController.js","total_count":11,"children":[{"name":"AuditLog","total_count":1,"children":[]},{"name":"BlockSchedule","total_count":1,"children":[]},{"name":"exportReport()","total_count":1,"children":[]},{"name":"formatDuration()","total_count":1,"children":[]},{"name":"getAuditLog()","total_count":1,"children":[]},{"name":"getDashboardStats()","total_count":1,"children":[]},{"name":"getDowntimeReport()","total_count":1,"children":[]},{"name":"getUtilizationReport()","total_count":1,"children":[]},{"name":"MaintenanceTask","total_count":1,"children":[]},{"name":"XLSX","total_count":1,"children":[]},{"name":"{ CorridorBlock }","total_count":1,"children":[]}]},{"name":"scheduleController.js","total_count":13,"children":[{"name":"approveSchedule()","total_count":1,"children":[]},{"name":"AuditLog","total_count":1,"children":[]},{"name":"axios","total_count":1,"children":[]},{"name":"BlockSchedule","total_count":1,"children":[]},{"name":"generateFallbackSchedule()","total_count":1,"children":[]},{"name":"generateSchedule()","total_count":1,"children":[]},{"name":"getSchedules()","total_count":1,"children":[]},{"name":"getScheduleStats()","total_count":1,"children":[]},{"name":"getWeekNumber()","total_count":1,"children":[]},{"name":"MaintenanceTask","total_count":1,"children":[]},{"name":"overrideSchedule()","total_count":1,"children":[]},{"name":"rejectSchedule()","total_count":1,"children":[]},{"name":"{ CorridorBlock, BlockWindow }","total_count":1,"children":[]}]},{"name":"taskController.js","total_count":9,"children":[{"name":"AuditLog","total_count":1,"children":[]},{"name":"createTask()","total_count":1,"children":[]},{"name":"deleteTask()","total_count":1,"children":[]},{"name":"getTask()","total_count":1,"children":[]},{"name":"getTasks()","total_count":1,"children":[]},{"name":"getTaskStats()","total_count":1,"children":[]},{"name":"MaintenanceTask","total_count":1,"children":[]},{"name":"prioritizeTasks()","total_count":1,"children":[]},{"name":"updateTask()","total_count":1,"children":[]}]}]},{"name":"index.js","total_count":9,"children":[{"name":"app","total_count":1,"children":[]},{"name":"connectMongo","total_count":1,"children":[]},{"name":"cors","total_count":1,"children":[]},{"name":"dotenv","total_count":1,"children":[]},{"name":"express","total_count":1,"children":[]},{"name":"morgan","total_count":1,"children":[]},{"name":"path","total_count":1,"children":[]},{"name":"startServer()","total_count":1,"children":[]},{"name":"{ sequelize, testConnection }","total_count":1,"children":[]}]},{"name":"middleware","total_count":5,"children":[{"name":"auth.js","total_count":5,"children":[{"name":"jwt","total_count":1,"children":[]},{"name":"protect()","total_count":1,"children":[]},{"name":"requireDepartment()","total_count":1,"children":[]},{"name":"requireRole()","total_count":1,"children":[]},{"name":"User","total_count":1,"children":[]}]}]},{"name":"models","total_count":14,"children":[{"name":"AuditLog.js","total_count":2,"children":[{"name":"auditLogSchema","total_count":1,"children":[]},{"name":"mongoose","total_count":1,"children":[]}]},{"name":"BlockSchedule.js","total_count":2,"children":[{"name":"blockScheduleSchema","total_count":1,"children":[]},{"name":"mongoose","total_count":1,"children":[]}]},{"name":"CorridorBlock.js","total_count":5,"children":[{"name":"BlockWindow","total_count":1,"children":[]},{"name":"CorridorBlock","total_count":1,"children":[]},{"name":"TrafficData","total_count":1,"children":[]},{"name":"{ DataTypes }","total_count":1,"children":[]},{"name":"{ sequelize }","total_count":1,"children":[]}]},{"name":"MaintenanceTask.js","total_count":2,"children":[{"name":"maintenanceTaskSchema","total_count":1,"children":[]},{"name":"mongoose","total_count":1,"children":[]}]},{"name":"User.js","total_count":3,"children":[{"name":"bcrypt","total_count":1,"children":[]},{"name":"mongoose","total_count":1,"children":[]},{"name":"userSchema","total_count":1,"children":[]}]}]},{"name":"package.json","total_count":43,"children":[{"name":"axios","total_count":1,"children":[]},{"name":"axios","total_count":1,"children":[]},{"name":"bcryptjs","total_count":1,"children":[]},{"name":"bcryptjs","total_count":1,"children":[]},{"name":"cors","total_count":1,"children":[]},{"name":"cors","total_count":1,"children":[]},{"name":"dependencies","total_count":1,"children":[]},{"name":"description","total_count":1,"children":[]},{"name":"dev","total_count":1,"children":[]},{"name":"devDependencies","total_count":1,"children":[]},{"name":"dotenv","total_count":1,"children":[]},{"name":"dotenv","total_count":1,"children":[]},{"name":"express","total_count":1,"children":[]},{"name":"express","total_count":1,"children":[]},{"name":"express-validator","total_count":1,"children":[]},{"name":"express-validator","total_count":1,"children":[]},{"name":"jsonwebtoken","total_count":1,"children":[]},{"name":"jsonwebtoken","total_count":1,"children":[]},{"name":"jspdf","total_count":1,"children":[]},{"name":"jspdf","total_count":1,"children":[]},{"name":"jspdf-autotable","total_count":1,"children":[]},{"name":"main","total_count":1,"children":[]},{"name":"mongoose","total_count":1,"children":[]},{"name":"mongoose","total_count":1,"children":[]},{"name":"morgan","total_count":1,"children":[]},{"name":"morgan","total_count":1,"children":[]},{"name":"multer","total_count":1,"children":[]},{"name":"multer","total_count":1,"children":[]},{"name":"name","total_count":1,"children":[]},{"name":"nodemon","total_count":1,"children":[]},{"name":"nodemon","total_count":1,"children":[]},{"name":"pg","total_count":1,"children":[]},{"name":"pg","total_count":1,"children":[]},{"name":"pg-hstore","total_count":1,"children":[]},{"name":"pg-hstore","total_count":1,"children":[]},{"name":"scripts","total_count":1,"children":[]},{"name":"seed","total_count":1,"children":[]},{"name":"sequelize","total_count":1,"children":[]},{"name":"sequelize","total_count":1,"children":[]},{"name":"start","total_count":1,"children":[]},{"name":"version","total_count":1,"children":[]},{"name":"xlsx","total_count":1,"children":[]},{"name":"xlsx","total_count":1,"children":[]}]},{"name":"routes","total_count":24,"children":[{"name":"auth.js","total_count":4,"children":[{"name":"authController","total_count":1,"children":[]},{"name":"express","total_count":1,"children":[]},{"name":"router","total_count":1,"children":[]},{"name":"{ protect }","total_count":1,"children":[]}]},{"name":"corridors.js","total_count":4,"children":[{"name":"corridorController","total_count":1,"children":[]},{"name":"express","total_count":1,"children":[]},{"name":"router","total_count":1,"children":[]},{"name":"{ protect }","total_count":1,"children":[]}]},{"name":"mockData.js","total_count":4,"children":[{"name":"express","total_count":1,"children":[]},{"name":"mockDataController","total_count":1,"children":[]},{"name":"router","total_count":1,"children":[]},{"name":"{ protect, requireRole }","total_count":1,"children":[]}]},{"name":"reports.js","total_count":4,"children":[{"name":"express","total_count":1,"children":[]},{"name":"reportController","total_count":1,"children":[]},{"name":"router","total_count":1,"children":[]},{"name":"{ protect, requireRole }","total_count":1,"children":[]}]},{"name":"schedules.js","total_count":4,"children":[{"name":"express","total_count":1,"children":[]},{"name":"router","total_count":1,"children":[]},{"name":"scheduleController","total_count":1,"children":[]},{"name":"{ protect, requireRole }","total_count":1,"children":[]}]},{"name":"tasks.js","total_count":4,"children":[{"name":"express","total_count":1,"children":[]},{"name":"router","total_count":1,"children":[]},{"name":"taskController","total_count":1,"children":[]},{"name":"{ protect }","total_count":1,"children":[]}]}]},{"name":"seed","total_count":8,"children":[{"name":"seedData.js","total_count":8,"children":[{"name":"bcrypt","total_count":1,"children":[]},{"name":"connectMongo","total_count":1,"children":[]},{"name":"dotenv","total_count":1,"children":[]},{"name":"mongoose","total_count":1,"children":[]},{"name":"path","total_count":1,"children":[]},{"name":"seedUsers()","total_count":1,"children":[]},{"name":"User","total_count":1,"children":[]},{"name":"users","total_count":1,"children":[]}]}]}]}]};
+
+    function transformData(jsonData) {
+        // Helper function to recursively build the children structure
+        function processNode(node, parentL1StageName) {
+            let displayName = node.name;
+            // Append total_count if it exists and is not already in the name
+            if (node.total_count !== undefined) {
+                if (!/\(Total Count: \d+\)$/.test(displayName)) {
+                    displayName += ` (Total Count: ${node.total_count})`;
+                }
+            }
+
+            const newNode = { name: displayName };
+
+            if (parentL1StageName === "Root") {
+                 newNode.originalStageName = node.name;
+            } else {
+                newNode.originalStageName = parentL1StageName;
+            }
+
+            if (node.children && node.children.length > 0) {
+                const stageNameToPass = (parentL1StageName === "Root") ? node.name : parentL1StageName;
+                newNode.children = node.children.map(child => processNode(child, stageNameToPass));
+            }
+
+            return newNode;
+        }
+
+        let rootDisplayName = jsonData.name;
+        if (jsonData.total_count !== undefined && !/\(Total Count: \d+\)$/.test(rootDisplayName)) {
+            rootDisplayName += ` (Total Count: ${jsonData.total_count})`;
+        }
+
+        return {
+            name: rootDisplayName,
+            originalStageName: "Root",
+            children: (jsonData.children || []).map(child => processNode(child, "Root"))
+        };
+    }
+
+    const treeData = transformData(initialJsonData);
+
+    // Auto-populated phaseColors: every depth-1 child of the root gets
+    // a stable colour from a bigger palette so all top-level dirs are
+    // distinguishable.
+    const PALETTE = [
+      ["#3498DB","#2980B9","#AED6F1"], ["#2ECC71","#27AE60","#A9DFBF"],
+      ["#E74C3C","#C0392B","#F5B7B1"], ["#9B59B6","#8E44AD","#D7BDE2"],
+      ["#F39C12","#D68910","#FAD7A0"], ["#1ABC9C","#117864","#A2D9CE"],
+      ["#34495E","#1B2631","#ABB2B9"], ["#E67E22","#BA4A00","#F5CBA7"],
+      ["#16A085","#0E6655","#A2D9CE"], ["#D35400","#A04000","#EDBB99"],
+      ["#7F8C8D","#566573","#D5DBDB"], ["#C0392B","#7B241C","#F5B7B1"],
+      ["#2E86C1","#1B4F72","#A9CCE3"], ["#28B463","#196F3D","#A9DFBF"],
+      ["#AF7AC5","#6C3483","#D2B4DE"],
+    ];
+    const phaseColors = { "Root": { fill: "#4A4A4A", stroke: "#333333", collapsedFill: "#6C757D" },
+                          "Default": { fill: "#BDC3C7", stroke: "#95A5A6", collapsedFill: "#ECF0F1" } };
+    (initialJsonData.children || []).forEach((c, i) => {
+      const pal = PALETTE[i % PALETTE.length];
+      phaseColors[c.name] = { fill: pal[0], stroke: pal[1], collapsedFill: pal[2] };
+    });
+
+    const levelSpecificPalettes = {
+      0: { fill: "#4A4A4A", stroke: "#333333", collapsedFill: "#6C757D" },
+      2: { fill: "#6ab04c", stroke: "#508a38", collapsedFill: "#a3d391" },
+      3: { fill: "#f0932b", stroke: "#d0730f", collapsedFill: "#f6c07e" },
+      4: { fill: "#be2edd", stroke: "#a01cb3", collapsedFill: "#e08bf2" },
+      5: { fill: "#00a8ff", stroke: "#007ac1", collapsedFill: "#74d2ff" },
+      6: { fill: "#e55039", stroke: "#c23620", collapsedFill: "#f09a8d" },
+      default: { fill: "#747d8c", stroke: "#57606f", collapsedFill: "#a4b0be" }
+    };
+
+    const svgElement = d3.select("#tree-svg");
+    const initialSvgWidth = +svgElement.attr("width");
+    const initialSvgHeight = +svgElement.attr("height");
+    const margin = { top: 40, right: 120, bottom: 80, left: 450 };
+    let width = initialSvgWidth - margin.left - margin.right;
+    let height = initialSvgHeight - margin.top - margin.bottom;
+    const duration = 500;
+    let nodeCounter = 0;
+    const g = svgElement.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+    const treemap = d3.tree().nodeSize([40, 0]);
+    let rootNode = d3.hierarchy(treeData, d => d.children);
+    rootNode.x0 = 0;
+    rootNode.y0 = 0;
+
+    if (rootNode.children) {
+      rootNode.children.forEach(d_child => {
+        if (d_child.children) { collapseBranch(d_child); }
+      });
+    }
+    updateTree(rootNode);
+
+    function collapseBranch(d) { if (d.children) { d._children = d.children; d._children.forEach(collapseBranch); d.children = null; } }
+    function expandBranch(d) { if (d._children) { d.children = d._children; d._children = null; } if (d.children) { d.children.forEach(expandBranch); } }
+    window.expandAll = () => { expandBranch(rootNode); updateTree(rootNode); };
+    window.collapseAll = () => { if (rootNode.children) { rootNode.children.forEach(collapseBranch); } updateTree(rootNode); };
+    window.resetView = () => { if (rootNode.children) { rootNode.children.forEach(d_child => { if (d_child.children || d_child._children) { collapseBranch(d_child); } }); } if (rootNode._children && !rootNode.children) { rootNode.children = rootNode._children; rootNode._children = null; } updateTree(rootNode); };
+
+    function updateTree(source) {
+      const treeLayoutData = treemap(rootNode);
+      let nodes = treeLayoutData.descendants();
+      let links = treeLayoutData.descendants().slice(1);
+
+      let minX = 0;
+      let maxX = 0;
+      if (nodes.length > 0) {
+        minX = d3.min(nodes, d => d.x);
+        maxX = d3.max(nodes, d => d.x);
+      }
+
+      let neededHeight = Math.max(initialSvgHeight, maxX - minX + margin.top + margin.bottom + 100);
+      svgElement.transition().duration(duration / 2).attr("height", neededHeight);
+      g.transition().duration(duration / 2).attr("transform", `translate(${margin.left},${margin.top - minX + 40})`);
+
+      nodes.forEach(d => { d.y = d.depth * 400; }); // Adjust horizontal separation if needed
+
+      const node = g.selectAll('g.node').data(nodes, d => d.id || (d.id = ++nodeCounter));
+      const nodeEnter = node.enter().append('g')
+        .attr('class', d => "node" + (d.children || d._children ? " node--internal" : " node--leaf") + (d._children ? " _children" : ""))
+        .attr('transform', d => `translate(${source.y0},${source.x0})`)
+        .on('click', (event, d) => { if (d.children) { d._children = d.children; d.children = null; } else if (d._children) { d.children = d._children; d._children = null; } updateTree(d); })
+        .style('cursor', d => (d.children || d._children) ? 'pointer' : 'default');
+
+      nodeEnter.append('circle').attr('r', 1e-6);
+
+      nodeEnter.append('text')
+        .attr('dy', '.35em')
+        .attr('x', d => d.children || d._children ? -14 : 14)
+        .attr('text-anchor', d => d.children || d._children ? 'end' : 'start')
+        .style("fill-opacity", 1e-6)
+        .call(wrapText, 380);
+
+      const nodeUpdate = nodeEnter.merge(node);
+      nodeUpdate.transition().duration(duration)
+        .attr('transform', d => `translate(${d.y},${d.x})`)
+        .attr('class', d => "node" + (d.children ? " node--internal" : " node--leaf") + (d._children ? " node--internal _children" : ""));
+
+      nodeUpdate.select('circle').attr('r', 8.5)
+        .style('fill', d => {
+            let palette;
+            if (d.depth === 0) {
+                palette = levelSpecificPalettes[0];
+            } else if (d.depth === 1) {
+                palette = phaseColors[d.data.originalStageName] || phaseColors.Default;
+            } else {
+                palette = levelSpecificPalettes[d.depth] || levelSpecificPalettes.default;
+            }
+            if (d._children) return palette.collapsedFill;
+            if (d.children) return palette.fill;
+            return "#fff";
+        })
+        .style('stroke', d => {
+            let palette;
+            if (d.depth === 0) {
+                palette = levelSpecificPalettes[0];
+            } else if (d.depth === 1) {
+                palette = phaseColors[d.data.originalStageName] || phaseColors.Default;
+            } else {
+                palette = levelSpecificPalettes[d.depth] || levelSpecificPalettes.default;
+            }
+            return palette.stroke;
+        });
+      nodeUpdate.select('text').style("fill-opacity", 1).call(wrapText, 380);
+
+      const nodeExit = node.exit().transition().duration(duration).attr('transform', d => `translate(${source.y},${source.x})`).remove();
+      nodeExit.select('circle').attr('r', 1e-6);
+      nodeExit.select('text').style('fill-opacity', 1e-6);
+
+      const link = g.selectAll('path.link').data(links, d => d.id);
+      const linkEnter = link.enter().insert('path', "g").attr('class', 'link').attr('d', d => { const o = { x: source.x0, y: source.y0 }; return diagonal(o, o); });
+
+      linkEnter.merge(link).transition().duration(duration).attr('d', d => diagonal(d, d.parent))
+        .style('stroke', d => {
+            const sourceNode = d.parent;
+            if (!sourceNode) return phaseColors.Default.stroke;
+            const l1AncestorName = sourceNode.data.originalStageName;
+            const colorPalette = phaseColors[l1AncestorName] || phaseColors.Default;
+            return colorPalette.stroke;
+        });
+      link.exit().transition().duration(duration).attr('d', d => { const o = { x: source.x, y: source.y }; return diagonal(o, o); }).remove();
+      nodes.forEach(d => { d.x0 = d.x; d.y0 = d.y; });
+    }
+
+    function diagonal(s, d) { return `M ${s.y} ${s.x} C ${(s.y + d.y) / 2} ${s.x}, ${(s.y + d.y) / 2} ${d.x}, ${d.y} ${d.x}`; }
+
+    function wrapText(textElements, maxWidth) {
+        const textPartColors = {
+            name: '#343a40',
+            count: '#0056b3'
+        };
+        const countRegex = /(\s\(Total Count: \d+\))$/;
+
+        textElements.each(function () {
+            const textD3 = d3.select(this);
+            const originalNodeText = textD3.datum().data.name;
+            const x = parseFloat(textD3.attr("x") || 0);
+            const initialDy = textD3.attr("dy");
+            const textAnchor = textD3.attr("text-anchor");
+            const lineHeight = 1.1;
+
+            textD3.text(null);
+
+            let namePart = originalNodeText;
+            let countPartText = "";
+
+            const countMatch = originalNodeText.match(countRegex);
+            if (countMatch && originalNodeText.endsWith(countMatch[0])) {
+                namePart = originalNodeText.substring(0, originalNodeText.length - countMatch[0].length).trim();
+                countPartText = countMatch[0].trim();
+            }
+
+            const tokens = [];
+            namePart.split(/\s+/).filter(Boolean).forEach(word => {
+                tokens.push({ text: word, type: 'name' });
+            });
+            if (countPartText) {
+                tokens.push({ text: countPartText, type: 'count' });
+            }
+
+            if (tokens.length === 0 && originalNodeText) {
+                tokens.push({ text: originalNodeText, type: 'name' });
+            }
+
+            let currentTspan = textD3.append("tspan").attr("x", x).attr("dy", initialDy);
+            if (textAnchor === "end") currentTspan.attr("text-anchor", "end");
+
+            let lineTokens = [];
+
+            for (let i = 0; i < tokens.length; i++) {
+                const tokenObj = tokens[i];
+
+                lineTokens.push(tokenObj);
+                currentTspan.text(lineTokens.map(t => t.text).join(" "));
+
+                if (currentTspan.node().getComputedTextLength() > maxWidth && lineTokens.length > 1) {
+                    lineTokens.pop();
+
+                    currentTspan.text(null);
+                    lineTokens.forEach((prevToken, idx) => {
+                        currentTspan.append("tspan")
+                            .text((idx > 0 ? " " : "") + prevToken.text)
+                            .style("fill", textPartColors[prevToken.type] || textPartColors.name)
+                            .style("font-weight", prevToken.type === 'count' ? "bold" : "normal");
+                    });
+
+                    lineTokens = [tokenObj];
+                    currentTspan = textD3.append("tspan").attr("x", x).attr("dy", lineHeight + "em");
+                    if (textAnchor === "end") currentTspan.attr("text-anchor", "end");
+                }
+            }
+
+            currentTspan.text(null);
+            lineTokens.forEach((token, idx) => {
+                currentTspan.append("tspan")
+                    .text((idx > 0 ? " " : "") + token.text)
+                    .style("fill", textPartColors[token.type] || textPartColors.name)
+                    .style("font-weight", token.type === 'count' ? "bold" : "normal");
+            });
+
+            if (textD3.selectAll("tspan > tspan").empty() && textD3.select("tspan").text().length === 0 && originalNodeText) {
+                let t = textD3.select("tspan");
+                let displayText = originalNodeText;
+                t.text(displayText).style("fill", textPartColors.name);
+                if (t.node() && t.node().getComputedTextLength() > maxWidth && displayText.length > 20) {
+                    let estimatedChars = Math.floor(maxWidth / (t.node().getComputedTextLength()/displayText.length) );
+                    displayText = displayText.substring(0, Math.max(0, estimatedChars - 3)) + "...";
+                    t.text(displayText);
+                }
+            }
+        });
+    }
+  </script>
+</body>
+</html>

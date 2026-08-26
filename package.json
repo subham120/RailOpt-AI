@@ -1,0 +1,17 @@
+{
+  "name": "sih-block-planning-system",
+  "version": "1.0.0",
+  "description": "AI-Powered Automatic Block Planning System for Indian Railways",
+  "private": true,
+  "scripts": {
+    "install:all": "cd server && npm install && cd ../client && npm install",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "dev:ai": "cd ai-engine && uvicorn main:app --reload --port 8000",
+    "seed": "cd server && npm run seed",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
