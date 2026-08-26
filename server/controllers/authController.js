@@ -7,7 +7,7 @@ const { JWT_SECRET, DEMO_USERS } = require('../middleware/auth');
 // Generate JWT with user id, email, and role
 const generateToken = (user) => {
   const payload = {
-    id: user._id ? user._id.toString() : 'demo_user',
+    id: (user._id || user.id || 'demo_user').toString(),
     email: user.email,
     role: user.role
   };
@@ -30,14 +30,15 @@ exports.register = [
 
     try {
       const { name, email, password, role, department, designation } = req.body;
+      const cleanEmail = email.toLowerCase().trim();
 
       // Check if user exists
-      const existingUser = await User.findOne({ email: email.toLowerCase() });
+      const existingUser = await User.findOne({ email: cleanEmail });
       if (existingUser) {
         return res.status(400).json({ success: false, message: 'User already exists with this email' });
       }
 
-      const user = await User.create({ name, email: email.toLowerCase(), password, role, department, designation });
+      const user = await User.create({ name, email: cleanEmail, password, role, department, designation });
       const token = generateToken(user);
 
       res.status(201).json({
@@ -66,41 +67,43 @@ exports.login = [
 
     try {
       const { email, password } = req.body;
-      const cleanEmail = email.toLowerCase().trim();
+      const cleanEmail = (email || '').toLowerCase().trim();
 
-      // 1. Find user in DB
+      // 1. Check if matching demo user credentials
+      const demoMatch = DEMO_USERS.find(
+        (u) => u.email.toLowerCase() === cleanEmail && u.password === password
+      );
+
       let user = null;
+
+      // Try to find user in MongoDB
       try {
         user = await User.findOne({ email: cleanEmail }).select('+password');
       } catch (dbErr) {
         console.warn('DB query during login failed:', dbErr.message);
       }
 
-      // 2. If not in DB, check demo accounts
-      if (!user) {
-        const demoUser = DEMO_USERS.find(
-          (u) => u.email.toLowerCase() === cleanEmail && u.password === password
-        );
-
-        if (demoUser) {
+      if (demoMatch) {
+        // Fast-path for verified demo accounts
+        if (!user) {
           try {
-            user = await User.create({ ...demoUser, email: cleanEmail });
-            console.log(`✅ Auto-provisioned demo user in DB: ${cleanEmail}`);
+            user = await User.create({ ...demoMatch, email: cleanEmail });
           } catch (createErr) {
-            // DB fallback
-            user = { ...demoUser };
+            user = { ...demoMatch };
           }
         }
-      }
+      } else {
+        // Regular user: verify against database password
+        if (!user) {
+          return res.status(401).json({ success: false, message: 'Invalid credentials' });
+        }
 
-      if (!user) {
-        return res.status(401).json({ success: false, message: 'Invalid credentials' });
-      }
-
-      // 3. Verify password if DB user with comparePassword method
-      if (typeof user.comparePassword === 'function') {
-        const isMatch = await user.comparePassword(password);
-        if (!isMatch) {
+        if (typeof user.comparePassword === 'function') {
+          const isMatch = await user.comparePassword(password);
+          if (!isMatch) {
+            return res.status(401).json({ success: false, message: 'Invalid credentials' });
+          }
+        } else if (user.password !== password) {
           return res.status(401).json({ success: false, message: 'Invalid credentials' });
         }
       }
@@ -115,24 +118,28 @@ exports.login = [
       try {
         await AuditLog.create({
           action: 'user_login',
-          userId: user._id,
-          userName: user.name,
+          userId: user._id || 'demo_user',
+          userName: user.name || cleanEmail,
           targetType: 'user',
-          details: `User ${user.name} logged in`
+          details: `User ${user.name || cleanEmail} logged in`
         });
       } catch (auditErr) {
-        // Ignore audit log error if DB offline
+        // Ignore audit error
       }
+
+      const userData = typeof user.toJSON === 'function' ? user.toJSON() : { ...user };
+      delete userData.password;
 
       res.json({
         success: true,
         data: {
-          user: typeof user.toJSON === 'function' ? user.toJSON() : user,
+          user: userData,
           token
         }
       });
     } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
+      console.error('Login error:', error);
+      res.status(500).json({ success: false, message: error.message || 'Login failed' });
     }
   }
 ];
