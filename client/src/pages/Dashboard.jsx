@@ -12,6 +12,7 @@ import {
   FiCheckCircle,
   FiArrowRight,
   FiZap,
+  FiExternalLink,
 } from 'react-icons/fi';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
 
@@ -23,6 +24,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     const fetchStats = async () => {
+      setLoading(true);
       try {
         const res = await reportAPI.getDashboardStats();
         setStats(res.data.data);
@@ -33,15 +35,15 @@ export default function Dashboard() {
       }
     };
     fetchStats();
-  }, []);
+  }, [activeZone]);
 
   const kpiCards = [
-    { label: 'Total Tasks', value: stats?.totalTasks || 0, icon: FiClipboard, color: '#003366', bg: '#E6EDF5' },
-    { label: 'Pending Tasks', value: stats?.pendingTasks || 0, icon: FiClock, color: '#F59E0B', bg: '#FEF3C7' },
-    { label: 'Scheduled Blocks', value: stats?.scheduledBlocks || 0, icon: FiCalendar, color: '#1A5276', bg: '#DBEAFE' },
-    { label: 'Asset Availability', value: `${stats?.assetAvailability || 99.5}%`, icon: FiActivity, color: '#046A38', bg: '#E8F5E9' },
-    { label: 'Overdue Critical', value: stats?.overdueCritical || 0, icon: FiAlertTriangle, color: '#DC2626', bg: '#FEE2E2' },
-    { label: 'Approved Blocks', value: stats?.approvedBlocks || 0, icon: FiCheckCircle, color: '#065F46', bg: '#D1FAE5' },
+    { label: 'Total Tasks', value: stats?.totalTasks || 0, icon: FiClipboard, color: '#003366', bg: '#E6EDF5', to: '/prioritization' },
+    { label: 'Pending Tasks', value: stats?.pendingTasks || 0, icon: FiClock, color: '#F59E0B', bg: '#FEF3C7', to: '/prioritization' },
+    { label: 'Scheduled Blocks', value: stats?.scheduledBlocks || 0, icon: FiCalendar, color: '#1A5276', bg: '#DBEAFE', to: '/schedules' },
+    { label: 'Asset Availability', value: `${stats?.assetAvailability || 99.5}%`, icon: FiActivity, color: '#046A38', bg: '#E8F5E9', to: '/reports' },
+    { label: 'Overdue Critical', value: stats?.overdueCritical || 0, icon: FiAlertTriangle, color: '#DC2626', bg: '#FEE2E2', to: '/prioritization?urgency=Critical' },
+    { label: 'Approved Blocks', value: stats?.approvedBlocks || 0, icon: FiCheckCircle, color: '#065F46', bg: '#D1FAE5', to: '/schedules' },
   ];
 
   // Guaranteed departmental distribution breakdown (Track, TRD, S&T)
@@ -254,7 +256,20 @@ export default function Dashboard() {
         {kpiCards.map((kpi, idx) => {
           const IconComp = kpi.icon;
           return (
-            <div key={idx} className="card" style={{ padding: '20px', display: 'flex', alignItems: 'flex-start', gap: '14px', animationDelay: `${idx * 0.05}s` }}>
+            <div
+              key={idx}
+              className="card"
+              onClick={() => kpi.to && navigate(kpi.to)}
+              style={{
+                padding: '20px', display: 'flex', alignItems: 'flex-start', gap: '14px',
+                animationDelay: `${idx * 0.05}s`,
+                cursor: kpi.to ? 'pointer' : 'default',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => { if (kpi.to) e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={(e) => { if (kpi.to) e.currentTarget.style.transform = 'none'; }}
+              title={kpi.to ? `Click to inspect ${kpi.label}` : undefined}
+            >
               <div style={{
                 width: '44px', height: '44px', borderRadius: '10px',
                 background: kpi.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -274,38 +289,52 @@ export default function Dashboard() {
       {/* Charts Row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '24px', marginBottom: '32px' }}>
         {/* Department-wise Tasks */}
-        <div className="card" style={{ padding: '24px' }}>
+        <div className="card-premium" style={{ padding: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <div>
-              <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1F2937', margin: 0 }}>
+              <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0F172A', margin: 0 }}>
                 Tasks by Department
               </h3>
-              <p style={{ fontSize: '12px', color: '#6B7280', margin: '2px 0 0' }}>
+              <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>
                 Track (TMS), OHE (TDMS) & Signal (SMMS) Workload
               </p>
             </div>
-            <span style={{ fontSize: '12px', fontWeight: '600', color: '#003366', background: '#E6EDF5', padding: '3px 8px', borderRadius: '6px' }}>
+            <span style={{ fontSize: '11px', fontWeight: '800', color: '#003366', background: '#E6EDF5', padding: '3px 8px', borderRadius: '6px', border: '1px solid #BFDBFE' }}>
               {stats?.totalTasks || 0} Total Tasks
             </span>
           </div>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={deptData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-              <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#4B5563', fontWeight: 600 }} />
-              <YAxis tick={{ fontSize: 12, fill: '#6B7280' }} allowDecimals={false} />
+              <defs>
+                <linearGradient id="dbGradTrack" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#1A5276" />
+                  <stop offset="100%" stopColor="#003366" />
+                </linearGradient>
+                <linearGradient id="dbGradOhe" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#FB923C" />
+                  <stop offset="100%" stopColor="#FF671F" />
+                </linearGradient>
+                <linearGradient id="dbGradSig" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#2E7D32" />
+                  <stop offset="100%" stopColor="#046A38" />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} strokeOpacity={0.7} />
+              <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#334155', fontWeight: 700 }} axisLine={{ stroke: '#CBD5E1' }} tickLine={false} />
+              <YAxis tick={{ fontSize: 12, fill: '#64748B', fontWeight: 600 }} axisLine={{ stroke: '#CBD5E1' }} tickLine={false} allowDecimals={false} />
               <Tooltip content={({ payload }) => {
                 if (!payload?.length) return null;
                 const d = payload[0].payload;
                 return (
-                  <div style={{ background: 'white', padding: '10px 14px', borderRadius: '8px', boxShadow: '0 4px 16px rgba(0,0,0,0.15)', fontSize: '13px', border: '1px solid #E5E7EB' }}>
-                    <p style={{ fontWeight: '700', color: '#1F2937', margin: '0 0 4px' }}>{d.fullName}</p>
-                    <p style={{ margin: 0, color: d.color, fontWeight: '600' }}>Tasks: <b>{d.count}</b></p>
+                  <div style={{ background: 'rgba(255,255,255,0.98)', backdropFilter: 'blur(8px)', padding: '10px 14px', borderRadius: '10px', boxShadow: '0 10px 25px rgba(0,0,0,0.12)', fontSize: '13px', border: '1px solid #CBD5E1' }}>
+                    <p style={{ fontWeight: '800', color: '#0F172A', margin: '0 0 4px' }}>{d.fullName}</p>
+                    <p style={{ margin: 0, color: d.color, fontWeight: '700' }}>Tasks: <b>{d.count}</b></p>
                   </div>
                 );
-              }} />
-              <Bar dataKey="count" radius={[6, 6, 0, 0]} barSize={44}>
-                {deptData.map((d, i) => (
-                  <Cell key={i} fill={d.color} />
+              }} cursor={{ fill: 'rgba(0, 51, 102, 0.04)' }} />
+              <Bar dataKey="count" radius={[6, 6, 0, 0]} barSize={42}>
+                {deptData.map((_, i) => (
+                  <Cell key={i} fill={i === 0 ? 'url(#dbGradTrack)' : i === 1 ? 'url(#dbGradOhe)' : 'url(#dbGradSig)'} />
                 ))}
               </Bar>
             </BarChart>
@@ -313,11 +342,16 @@ export default function Dashboard() {
         </div>
 
         {/* Criticality Distribution */}
-        <div className="card" style={{ padding: '24px' }}>
-          <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1F2937', marginBottom: '20px' }}>
-            Task Criticality Distribution
-          </h3>
-          <ResponsiveContainer width="100%" height={250}>
+        <div className="card-premium" style={{ padding: '24px' }}>
+          <div style={{ marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0F172A', margin: 0 }}>
+              Task Criticality Distribution
+            </h3>
+            <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>
+              Safety & operational urgency levels
+            </p>
+          </div>
+          <ResponsiveContainer width="100%" height={240}>
             <PieChart>
               <Pie
                 data={criticalityData}
@@ -325,33 +359,39 @@ export default function Dashboard() {
                 nameKey="name"
                 cx="50%"
                 cy="50%"
-                innerRadius={55}
-                outerRadius={90}
-                paddingAngle={3}
+                innerRadius={60}
+                outerRadius={88}
+                paddingAngle={4}
+                cornerRadius={5}
                 isAnimationActive={true}
               >
                 {criticalityData.map((cfg, i) => (
                   <Cell key={i} fill={cfg.color} />
                 ))}
               </Pie>
-              <Tooltip formatter={(val, name) => [`${val} Tasks`, name]} />
-              <Legend verticalAlign="bottom" height={36} iconType="circle" formatter={(value) => <span style={{ fontSize: '12px', color: '#6B7280' }}>{value}</span>} />
+              <Tooltip formatter={(val, name) => [`${val} Tasks`, name]} contentStyle={{ borderRadius: '10px', border: '1px solid #CBD5E1', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} />
+              <Legend verticalAlign="bottom" height={36} iconType="circle" iconSize={8} formatter={(value) => <span style={{ fontSize: '12px', color: '#475569', fontWeight: '600' }}>{value}</span>} />
             </PieChart>
           </ResponsiveContainer>
         </div>
 
         {/* Availability Trend */}
-        <div className="card" style={{ padding: '24px' }}>
-          <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1F2937', marginBottom: '20px' }}>
-            Asset Availability Trend (7 Days)
-          </h3>
-          <ResponsiveContainer width="100%" height={250}>
+        <div className="card-premium" style={{ padding: '24px' }}>
+          <div style={{ marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0F172A', margin: 0 }}>
+              Asset Availability Trend (7 Days)
+            </h3>
+            <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>
+              Pan-division operational uptime benchmark
+            </p>
+          </div>
+          <ResponsiveContainer width="100%" height={240}>
             <LineChart data={availabilityTrend}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-              <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-              <YAxis domain={[90, 100]} tick={{ fontSize: 12 }} tickFormatter={(v) => `${v}%`} />
-              <Tooltip formatter={(v) => [`${v.toFixed(1)}%`, 'Availability']} />
-              <Line type="monotone" dataKey="availability" stroke="#046A38" strokeWidth={2.5} dot={{ fill: '#046A38', r: 4 }} activeDot={{ r: 6 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} strokeOpacity={0.7} />
+              <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#475569', fontWeight: 600 }} axisLine={{ stroke: '#CBD5E1' }} tickLine={false} />
+              <YAxis domain={[90, 100]} tick={{ fontSize: 11, fill: '#64748B', fontWeight: 600 }} axisLine={{ stroke: '#CBD5E1' }} tickLine={false} tickFormatter={(v) => `${v}%`} />
+              <Tooltip formatter={(v) => [`${v.toFixed(1)}%`, 'Availability']} contentStyle={{ borderRadius: '10px', border: '1px solid #CBD5E1', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} />
+              <Line type="monotone" dataKey="availability" stroke="#046A38" strokeWidth={3} dot={{ fill: '#046A38', r: 4, strokeWidth: 2, stroke: '#FFFFFF' }} activeDot={{ r: 6, fill: '#046A38' }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -375,9 +415,21 @@ export default function Dashboard() {
             </thead>
             <tbody>
               {stats.recentSchedules.map((s, i) => (
-                <tr key={i}>
-                  <td style={{ fontFamily: 'monospace', fontSize: '13px' }}>{s.scheduleId}</td>
-                  <td>{s.sectionName || s.sectionId}</td>
+                <tr
+                  key={i}
+                  onClick={() => navigate(`/schedules?scheduleId=${encodeURIComponent(s.scheduleId)}`)}
+                  style={{ cursor: 'pointer', transition: 'background 0.15s' }}
+                  title="Click to view schedule details in Schedules timeline"
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#F0F9FF'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <td style={{ fontFamily: 'monospace', fontSize: '13px', fontWeight: '700', color: '#003366' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>{s.scheduleId}</span>
+                      <FiExternalLink style={{ fontSize: '11px', opacity: 0.7 }} />
+                    </div>
+                  </td>
+                  <td style={{ fontWeight: '500' }}>{s.sectionName || s.sectionId}</td>
                   <td>
                     <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                       {(s.departments || []).map((d, j) => (

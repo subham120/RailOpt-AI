@@ -2,19 +2,19 @@ export const API_BASE = '/api';
 
 export const ROLES = {
   ADMIN: 'admin',
-  ENGINEERING: 'engineering',
-  TRD: 'trd',
-  S_AND_T: 's_and_t',
-  CONTROL_OFFICE: 'control_office',
+  SECTION_CONTROLLER: 'section_controller',
+  DEPT_ENGINEER: 'dept_engineer',
 };
 
 export const ROLE_LABELS = {
   admin: 'Administrator',
-  engineering: 'Engineering (P.Way)',
-  trd: 'Traction Distribution (TRD)',
-  s_and_t: 'Signal & Telecom (S&T)',
-  control_office: 'Control Office',
+  section_controller: 'Section Controller',
+  dept_engineer: 'Department Engineer',
 };
+
+// Shorthand for role check: any logged-in user can see 'all', privileged roles can see 'elevated'
+const ALL_ROLES = ['admin', 'section_controller', 'dept_engineer'];
+const ELEVATED = ['admin', 'section_controller'];
 
 export const DEPARTMENTS = {
   'Engineering': { color: '#1A5276', bg: '#E6EDF5', label: 'Engineering' },
@@ -48,13 +48,14 @@ export const SOURCE_SYSTEMS = {
 };
 
 export const NAV_ITEMS = [
-  { path: '/', label: 'Dashboard', icon: 'dashboard', roles: ['admin', 'engineering', 'trd', 's_and_t', 'control_office'] },
-  { path: '/data-integration', label: 'Data Integration', icon: 'database', roles: ['admin', 'engineering', 'trd', 's_and_t', 'control_office'] },
-  { path: '/prioritization', label: 'AI Prioritization', icon: 'ai', roles: ['admin', 'control_office'] },
-  { path: '/schedules', label: 'Block Schedules', icon: 'calendar', roles: ['admin', 'engineering', 'trd', 's_and_t', 'control_office'] },
-  { path: '/requests', label: 'Block Requests', icon: 'request', roles: ['admin', 'engineering', 'trd', 's_and_t', 'control_office'] },
-  { path: '/corridor-map', label: 'Corridor Map', icon: 'map', roles: ['admin', 'engineering', 'trd', 's_and_t', 'control_office'] },
-  { path: '/reports', label: 'Reports & Audit', icon: 'report', roles: ['admin', 'control_office'] },
+  { path: '/', label: 'Dashboard', icon: 'dashboard', roles: ['admin', 'section_controller', 'dept_engineer'] },
+  { path: '/data-integration', label: 'Data Integration', icon: 'database', roles: ['admin', 'section_controller', 'dept_engineer'] },
+  { path: '/prioritization', label: 'AI Prioritization', icon: 'ai', roles: ['admin', 'section_controller'] },
+  { path: '/schedules', label: 'Block Schedules', icon: 'calendar', roles: ['admin', 'section_controller', 'dept_engineer'] },
+  { path: '/requests', label: 'Block Requests', icon: 'request', roles: ['admin', 'section_controller', 'dept_engineer'] },
+  { path: '/corridor-map', label: 'Corridor Map', icon: 'map', roles: ['admin', 'section_controller', 'dept_engineer'] },
+  { path: '/reports', label: 'Reports & Audit', icon: 'report', roles: ['admin', 'section_controller'] },
+  { path: '/assistant', label: 'AI Assistant', icon: 'assistant', roles: ['admin', 'section_controller', 'dept_engineer'] },
 ];
 
 export const formatDuration = (totalMinutes) => {

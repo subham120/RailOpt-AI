@@ -1,12 +1,44 @@
 import { useAuth } from '../../context/AuthContext';
 import { ROLE_LABELS, ZONAL_RAILWAYS } from '../../utils/constants';
 import { useState } from 'react';
-import { FiLogOut, FiUser, FiChevronDown, FiGlobe } from 'react-icons/fi';
+import { FiLogOut, FiUser, FiChevronDown, FiGlobe, FiKey, FiCheck } from 'react-icons/fi';
+import { authAPI } from '../../services/api';
+import NotificationCenter from './NotificationCenter';
 
 export default function Header() {
   const { user, logout, activeZone, setActiveZone } = useAuth();
   const [fontSize, setFontSize] = useState(16);
   const [showMenu, setShowMenu] = useState(false);
+
+  // Change password modal state
+  const [showPwdModal, setShowPwdModal] = useState(false);
+  const [currentPwd, setCurrentPwd] = useState('');
+  const [newPwd, setNewPwd] = useState('');
+  const [pwdMsg, setPwdMsg] = useState({ type: '', text: '' });
+  const [pwdLoading, setPwdLoading] = useState(false);
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setPwdLoading(true);
+    setPwdMsg({ type: '', text: '' });
+    try {
+      await authAPI.changePassword({ current_password: currentPwd, new_password: newPwd });
+      setPwdMsg({ type: 'success', text: 'Password updated successfully!' });
+      setCurrentPwd('');
+      setNewPwd('');
+      setTimeout(() => {
+        setShowPwdModal(false);
+        setPwdMsg({ type: '', text: '' });
+      }, 1500);
+    } catch (err) {
+      setPwdMsg({
+        type: 'error',
+        text: err.response?.data?.detail || 'Failed to update password',
+      });
+    } finally {
+      setPwdLoading(false);
+    }
+  };
 
   const changeFontSize = (delta) => {
     const newSize = Math.min(Math.max(fontSize + delta, 12), 22);
@@ -52,7 +84,6 @@ export default function Header() {
       }}>
         {/* Left — Official Emblem + Title */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          {/* Official Indian Railways Logo */}
           <div style={{
             width: '46px',
             height: '46px',
@@ -82,7 +113,7 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Right — Zone Selector & User Info */}
+        {/* Right — Zone Selector, Notifications & User Info */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', position: 'relative' }}>
           {/* Pan-India Zone Selector */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -105,12 +136,19 @@ export default function Header() {
             >
               {ZONAL_RAILWAYS.map((z) => (
                 <option key={z.code} value={z.code} style={{ background: '#0A2540', color: '#FFFFFF' }}>
-                  {z.code === 'ALL' ? '🌐 Pan-India (All 18 Zones)' : `${z.code} — ${z.name}`}
+                  {z.code === 'ALL' ? 'Pan-India (All 18 Zones)' : `${z.code} — ${z.name}`}
                 </option>
               ))}
             </select>
           </div>
 
+          {/* Interactive Telemetry & Safety Notification Center */}
+          <NotificationCenter
+            activeZone={activeZone}
+            zoneName={ZONAL_RAILWAYS.find((z) => z.code === activeZone)?.name}
+          />
+
+          {/* User profile dropdown button */}
           <div
             style={{
               display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer',
@@ -137,7 +175,7 @@ export default function Header() {
             <FiChevronDown style={{ opacity: 0.7, fontSize: '14px', transition: 'transform 0.2s', transform: showMenu ? 'rotate(180deg)' : 'none' }} />
           </div>
 
-          {/* Dropdown Menu */}
+          {/* User Dropdown Menu */}
           {showMenu && (
             <div style={{
               position: 'absolute', top: '100%', right: 0, marginTop: '8px',
@@ -157,9 +195,25 @@ export default function Header() {
                 }}>{user?.department || 'Operating'}</span>
               </div>
               <button
+                onClick={() => { setShowPwdModal(true); setShowMenu(false); }}
+                style={{
+                  width: '100%', padding: '10px 16px', border: 'none',
+                  background: 'none', textAlign: 'left', cursor: 'pointer',
+                  fontSize: '13px', color: '#334155', fontWeight: '600',
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  transition: 'background 0.2s',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#F1F5F9'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+              >
+                <FiKey style={{ fontSize: '14px', color: '#64748B' }} />
+                <span>Change Password</span>
+              </button>
+              <button
                 onClick={logout}
                 style={{
                   width: '100%', padding: '12px 16px', border: 'none',
+                  borderTop: '1px solid #F1F5F9',
                   background: 'none', textAlign: 'left', cursor: 'pointer',
                   fontSize: '13px', color: '#DC2626', fontWeight: '600',
                   display: 'flex', alignItems: 'center', gap: '8px',
@@ -175,6 +229,87 @@ export default function Header() {
           )}
         </div>
       </header>
+
+      {/* Change Password Modal */}
+      {showPwdModal && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 9999,
+        }}>
+          <div style={{
+            background: 'white', borderRadius: '12px', padding: '24px', width: '380px',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+          }}>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '17px', color: '#0F172A', fontWeight: 700 }}>
+              Change Password
+            </h3>
+            {pwdMsg.text && (
+              <div style={{
+                padding: '8px 12px', borderRadius: '6px', fontSize: '12px', marginBottom: '14px',
+                background: pwdMsg.type === 'success' ? '#DCFCE7' : '#FEE2E2',
+                color: pwdMsg.type === 'success' ? '#166534' : '#991B1B',
+              }}>
+                {pwdMsg.text}
+              </div>
+            )}
+            <form onSubmit={handleChangePassword}>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                  Current Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={currentPwd}
+                  onChange={(e) => setCurrentPwd(e.target.value)}
+                  style={{
+                    width: '100%', padding: '8px 12px', borderRadius: '6px',
+                    border: '1px solid #CBD5E1', fontSize: '13px', boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                  New Password (min 8 characters)
+                </label>
+                <input
+                  type="password"
+                  required
+                  minLength={8}
+                  value={newPwd}
+                  onChange={(e) => setNewPwd(e.target.value)}
+                  style={{
+                    width: '100%', padding: '8px 12px', borderRadius: '6px',
+                    border: '1px solid #CBD5E1', fontSize: '13px', boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => { setShowPwdModal(false); setPwdMsg({ type: '', text: '' }); }}
+                  style={{
+                    padding: '8px 16px', borderRadius: '6px', border: '1px solid #CBD5E1',
+                    background: 'white', color: '#64748B', cursor: 'pointer', fontSize: '13px',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={pwdLoading}
+                  style={{
+                    padding: '8px 16px', borderRadius: '6px', border: 'none',
+                    background: '#003366', color: 'white', fontWeight: 600, cursor: 'pointer', fontSize: '13px',
+                  }}
+                >
+                  {pwdLoading ? 'Saving…' : 'Update Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

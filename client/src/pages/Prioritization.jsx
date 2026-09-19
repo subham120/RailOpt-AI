@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { taskAPI, mockAPI } from '../services/api';
-import { CRITICALITY_CONFIG, DEPARTMENTS, formatDuration } from '../utils/constants';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { taskAPI, ingestAPI } from '../services/api';
+import { DEPARTMENTS, formatDuration } from '../utils/constants';
 import {
   FiZap,
   FiDatabase,
@@ -13,11 +14,89 @@ import {
   FiInfo,
   FiCalendar,
   FiArrowRight,
+  FiCpu,
+  FiSearch,
+  FiX,
 } from 'react-icons/fi';
 import React from 'react';
 
+const getAiDriver = (t, safetyVal, overdueVal, trafficVal, recurrenceVal) => {
+  if (safetyVal >= 0.85 || t.criticality === 'critical') {
+    return {
+      label: 'High Safety Risk',
+      icon: '🛡️',
+      color: '#991B1B',
+      bg: '#FEF2F2',
+      border: '#FECACA',
+      badge: 'Safety Priority',
+      insight: 'Important track safety defect. Needs fast repair to ensure smooth train operations.',
+    };
+  }
+  if (overdueVal >= 0.70) {
+    return {
+      label: 'Work Is Overdue',
+      icon: '⏳',
+      color: '#92400E',
+      bg: '#FFFBEB',
+      border: '#FDE68A',
+      badge: 'Overdue Work',
+      insight: 'This task is past its target date. Schedule soon to prevent delays.',
+    };
+  }
+  if (trafficVal >= 0.80) {
+    return {
+      label: 'Busy Train Line',
+      icon: '🚆',
+      color: '#1E40AF',
+      bg: '#EFF6FF',
+      border: '#BFDBFE',
+      badge: 'High Traffic Route',
+      insight: 'Very busy section with many trains. Best to fix during quiet night hours.',
+    };
+  }
+  if (recurrenceVal >= 0.50) {
+    return {
+      label: 'Repeated Problem',
+      icon: '🔁',
+      color: '#6B21A8',
+      bg: '#FAF5FF',
+      border: '#E9D5FF',
+      badge: 'Repeated Defect',
+      insight: 'This issue happened multiple times recently. A full check is suggested.',
+    };
+  }
+  return {
+    label: 'Standard Maintenance',
+    icon: '✅',
+    color: '#065F46',
+    bg: '#ECFDF5',
+    border: '#A7F3D0',
+    badge: 'Routine Task',
+    insight: 'Normal routine maintenance with minimal impact on train schedules.',
+  };
+};
+
+const cleanReasoning = (text) => {
+  if (!text) return '';
+  // If text contains technical debug info like [High] Final score: ..., remove it
+  let cleaned = text.replace(/\[\w+\]\s*Final score:\s*[\d.]+\s*\(.*?\)\.\s*/i, '');
+  cleaned = cleaned.replace(/Safety=[\d.]+,?\s*/gi, '');
+  cleaned = cleaned.replace(/Overdue=[\d.]+,?\s*/gi, '');
+  cleaned = cleaned.replace(/Traffic=[\d.]+,?\s*/gi, '');
+  cleaned = cleaned.replace(/Recurrence=[\d.]+,?\s*/gi, '');
+  cleaned = cleaned.replace(/InspGap=[\d.]+\.?\s*/gi, '');
+  return cleaned.trim();
+};
+
 export default function Prioritization() {
+  const { activeZone } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const targetTaskId = searchParams.get('taskId') || searchParams.get('search') || '';
+  const initialDept = searchParams.get('department') || '';
+  const initialUrgency = searchParams.get('urgency') || '';
+
   const [tasks, setTasks] = useState([]);
   const [scoredTasks, setScoredTasks] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -27,6 +106,10 @@ export default function Prioritization() {
   const [expandedRow, setExpandedRow] = useState(null);
   const [toast, setToast] = useState(null);
 
+  const [searchTerm, setSearchTerm] = useState(targetTaskId);
+  const [filterDept, setFilterDept] = useState(initialDept);
+  const [filterUrgency, setFilterUrgency] = useState(initialUrgency);
+
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 4000);
@@ -35,7 +118,11 @@ export default function Prioritization() {
   const fetchTasks = async () => {
     setLoading(true);
     try {
-      const res = await taskAPI.getAll({ limit: 100 });
+      const params = { limit: 1000 };
+      if (activeZone && activeZone !== 'ALL') {
+        params.zone = activeZone;
+      }
+      const res = await taskAPI.getAll(params);
       const allTasks = res.data.data || [];
       setTasks(allTasks);
 
@@ -50,6 +137,9 @@ export default function Prioritization() {
           medium: sorted.filter(t => t.urgencyTier === 'Medium').length,
           low: sorted.filter(t => t.urgencyTier === 'Low').length,
         });
+      } else {
+        setScoredTasks([]);
+        setSummary(null);
       }
     } catch (err) {
       console.error('Error loading tasks:', err);
@@ -60,12 +150,30 @@ export default function Prioritization() {
 
   useEffect(() => {
     fetchTasks();
-  }, []);
+  }, [activeZone]);
+
+  // Auto-expand & scroll to targeted task ID when tasks load
+  useEffect(() => {
+    if (targetTaskId && (scoredTasks.length > 0 || tasks.length > 0)) {
+      const list = scoredTasks.length > 0 ? scoredTasks : tasks;
+      const idx = list.findIndex(t => (t.taskId || t.task_id || '').toLowerCase() === targetTaskId.toLowerCase());
+      if (idx !== -1) {
+        setExpandedRow(idx);
+        setTimeout(() => {
+          const el = document.getElementById(`task-row-${targetTaskId}`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 350);
+      }
+    }
+  }, [targetTaskId, scoredTasks, tasks]);
 
   const runPrioritization = async () => {
     setScoring(true);
     try {
-      const res = await taskAPI.prioritize();
+      const payload = activeZone && activeZone !== 'ALL' ? { zone: activeZone } : {};
+      const res = await taskAPI.prioritize(payload);
       if (res.data.success) {
         const scored = res.data.tasks || [];
         setScoredTasks(scored);
@@ -76,7 +184,7 @@ export default function Prioritization() {
           medium: scored.filter(t => t.urgencyTier === 'Medium').length,
           low: scored.filter(t => t.urgencyTier === 'Low').length,
         });
-        showToast(`RailOpt AI Prioritization completed for ${scored.length} maintenance tasks`);
+        showToast(`AI prioritized ${scored.length} maintenance tasks successfully`);
       }
     } catch (err) {
       console.error('Prioritization failed:', err);
@@ -89,9 +197,9 @@ export default function Prioritization() {
   const handleSeedData = async () => {
     setSeeding(true);
     try {
-      await mockAPI.seed({ taskCount: 80, clearExisting: true });
+      await ingestAPI.seed();
       await fetchTasks();
-      showToast('Successfully seeded 80 Indian Railways defect tasks');
+      showToast('Successfully seeded Indian Railways defect tasks');
     } catch (err) {
       showToast('Seeding failed: ' + (err.response?.data?.message || err.message), 'error');
     } finally {
@@ -148,18 +256,20 @@ export default function Prioritization() {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1F2937', margin: '0 0 4px' }}>
-            RailOpt AI Prioritization Engine
-          </h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '4px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1F2937', margin: 0 }}>
+              RailOpt AI Prioritization Engine
+            </h2>
+          </div>
           <p style={{ fontSize: '14px', color: '#6B7280', margin: 0 }}>
-            Hybrid Domain Safety Rules + ML Multi-Factor Criticality Scoring with Transparent Explainability
+            Smart AI ranking based on safety urgency, due dates, and train traffic
           </p>
         </div>
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
           {tasks.length === 0 && (
             <button className="btn btn-outline" onClick={handleSeedData} disabled={seeding} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <FiDatabase />
-              {seeding ? 'Seeding...' : 'Seed 80 Tasks'}
+              {seeding ? 'Loading Data...' : 'Load 80 Tasks'}
             </button>
           )}
           <button
@@ -169,7 +279,7 @@ export default function Prioritization() {
             style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
           >
             <FiZap style={{ color: '#FBBF24' }} />
-            {scoring ? 'Scoring Telemetry...' : 'Run AI Prioritization'}
+            {scoring ? 'AI is Evaluating...' : 'Run AI Prioritization'}
           </button>
         </div>
       </div>
@@ -202,24 +312,110 @@ export default function Prioritization() {
       {loading ? (
         <div className="card" style={{ padding: '60px', textAlign: 'center' }}>
           <div style={{ display: 'inline-block', width: '32px', height: '32px', border: '3px solid #E5E7EB', borderTopColor: '#003366', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: '12px' }} />
-          <p style={{ color: '#6B7280', fontSize: '14px', margin: 0 }}>Evaluating maintenance task criticality...</p>
+          <p style={{ color: '#6B7280', fontSize: '14px', margin: 0 }}>Evaluating maintenance task priorities...</p>
         </div>
-      ) : scoredTasks.length > 0 ? (
+      ) : (scoredTasks.length > 0 || tasks.length > 0) ? (
         <div className="card" style={{ overflow: 'hidden' }}>
+          {/* Search, Filter & Active Focus Bar */}
+          <div style={{ padding: '16px 20px', background: '#FFFFFF', borderBottom: '1px solid #E5E7EB', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', flex: 1 }}>
+              {/* Search Box */}
+              <div style={{ position: 'relative', minWidth: '240px', maxWidth: '340px', flex: 1 }}>
+                <FiSearch style={{ position: 'absolute', left: '10px', top: '10px', color: '#9CA3AF' }} />
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="Search Task ID, defect, or section..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  style={{ paddingLeft: '32px', fontSize: '13px', width: '100%' }}
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => {
+                      setSearchTerm('');
+                      setSearchParams({});
+                    }}
+                    style={{ position: 'absolute', right: '8px', top: '8px', background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer' }}
+                  >
+                    <FiX />
+                  </button>
+                )}
+              </div>
+
+              {/* Department Filter */}
+              <select
+                className="input select"
+                style={{ width: '160px', fontSize: '13px', padding: '6px 10px' }}
+                value={filterDept}
+                onChange={(e) => setFilterDept(e.target.value)}
+              >
+                <option value="">All Departments</option>
+                {Object.keys(DEPARTMENTS).map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+
+              {/* Urgency Filter */}
+              <select
+                className="input select"
+                style={{ width: '150px', fontSize: '13px', padding: '6px 10px' }}
+                value={filterUrgency}
+                onChange={(e) => setFilterUrgency(e.target.value)}
+              >
+                <option value="">All Urgencies</option>
+                <option value="Critical">Critical</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+              </select>
+            </div>
+
+            {/* Targeted Task Notification Badge */}
+            {targetTaskId && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                background: '#EFF6FF', border: '1px solid #93C5FD',
+                padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', color: '#1D4ED8',
+              }}>
+                <span>🎯 Focused Task: {targetTaskId}</span>
+                <button
+                  onClick={() => {
+                    setSearchParams({});
+                    setSearchTerm('');
+                  }}
+                  style={{ background: 'none', border: 'none', color: '#1D4ED8', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                  title="Clear focus filter"
+                >
+                  <FiX />
+                </button>
+              </div>
+            )}
+          </div>
+
           <div style={{ padding: '14px 20px', background: '#F8FAFC', borderBottom: '1px solid #E5E7EB', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '13px', fontWeight: '700', color: '#1F2937' }}>
-                Multi-Factor Risk Model:
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '13px', fontWeight: '800', color: '#1E293B', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <FiCpu style={{ color: '#003366', fontSize: '16px' }} />
+                AI Smart Priority Factors:
               </span>
               <div style={{ display: 'flex', gap: '8px', fontSize: '11px', fontWeight: '600', flexWrap: 'wrap' }}>
-                <span style={{ background: '#FEE2E2', color: '#991B1B', padding: '2px 7px', borderRadius: '4px' }}>🛡️ Safety (35%)</span>
-                <span style={{ background: '#FEF3C7', color: '#92400E', padding: '2px 7px', borderRadius: '4px' }}>⏳ Overdue (25%)</span>
-                <span style={{ background: '#DBEAFE', color: '#1E40AF', padding: '2px 7px', borderRadius: '4px' }}>🚦 Traffic (20%)</span>
-                <span style={{ background: '#F3E8FF', color: '#6B21A8', padding: '2px 7px', borderRadius: '4px' }}>🔁 History (20%)</span>
+                <span style={{ background: '#FEE2E2', color: '#991B1B', padding: '3px 9px', borderRadius: '6px', border: '1px solid #FECACA', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  🛡️ Track Safety
+                </span>
+                <span style={{ background: '#FEF3C7', color: '#92400E', padding: '3px 9px', borderRadius: '6px', border: '1px solid #FDE68A', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  ⏳ Due Date & Delay
+                </span>
+                <span style={{ background: '#DBEAFE', color: '#1E40AF', padding: '3px 9px', borderRadius: '6px', border: '1px solid #BFDBFE', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  🚆 Train Traffic
+                </span>
+                <span style={{ background: '#F3E8FF', color: '#6B21A8', padding: '3px 9px', borderRadius: '6px', border: '1px solid #E9D5FF', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  🔁 Past Defect History
+                </span>
               </div>
             </div>
             <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: '500' }}>
-              Click any row for in-depth AI reasoning
+              Click any row for simple explanation
             </span>
           </div>
 
@@ -231,14 +427,36 @@ export default function Prioritization() {
                 <th>Section</th>
                 <th>Defect Type</th>
                 <th>Department</th>
-                <th>AI Score</th>
-                <th>Urgency Tier</th>
-                <th>Score Breakdown (Safety • Due • Traffic • History)</th>
+                <th>AI Priority</th>
+                <th>Urgency</th>
+                <th style={{ minWidth: '320px' }}>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <FiCpu style={{ color: '#003366' }} />
+                    <span>Why AI Chose This Priority</span>
+                  </div>
+                </th>
                 <th style={{ width: '40px' }}></th>
               </tr>
             </thead>
             <tbody>
-              {scoredTasks.map((t, idx) => {
+              {(scoredTasks.length > 0 ? scoredTasks : tasks)
+                .filter(t => {
+                  const tId = (t.taskId || t.task_id || '').toLowerCase();
+                  const sec = (t.sectionName || t.sectionId || '').toLowerCase();
+                  const def = (t.defectType || t.defect_type || '').toLowerCase();
+                  const dept = t.department || '';
+                  const score = t.criticalityScore ?? (t.criticality === 'critical' ? 0.95 : t.criticality === 'high' ? 0.75 : 0.45);
+                  const tier = t.urgencyTier || getTierLabel(score);
+
+                  if (searchTerm) {
+                    const q = searchTerm.toLowerCase();
+                    if (!tId.includes(q) && !sec.includes(q) && !def.includes(q)) return false;
+                  }
+                  if (filterDept && dept !== filterDept) return false;
+                  if (filterUrgency && tier.toLowerCase() !== filterUrgency.toLowerCase() && (t.criticality || '').toLowerCase() !== filterUrgency.toLowerCase()) return false;
+                  return true;
+                })
+                .map((t, idx) => {
                 const score = t.criticalityScore || 0;
                 const tier = t.urgencyTier || getTierLabel(score);
                 const tierColor = getTierColor(score);
@@ -249,20 +467,35 @@ export default function Prioritization() {
                 const overdueVal = t.scoreBreakdown?.overdue ?? 0.65;
                 const trafficVal = t.scoreBreakdown?.traffic ?? 0.60;
                 const recurrenceVal = t.scoreBreakdown?.recurrence ?? 0.30;
+                const aiDriver = getAiDriver(t, safetyVal, overdueVal, trafficVal, recurrenceVal);
+                const explanation = cleanReasoning(t.aiReasoning || t.reasoning) || aiDriver.insight;
+
+                const isTarget = targetTaskId && ((t.taskId || t.task_id || '').toLowerCase() === targetTaskId.toLowerCase());
 
                 return (
                   <React.Fragment key={t._id || t.id || idx}>
                     <tr
+                      id={`task-row-${t.taskId || t.task_id}`}
                       onClick={() => setExpandedRow(isExpanded ? null : idx)}
                       style={{
                         cursor: 'pointer',
-                        background: isExpanded ? '#F0F9FF' : 'transparent',
+                        background: isTarget ? (isExpanded ? '#E0F2FE' : '#F0F9FF') : (isExpanded ? '#F0F9FF' : 'transparent'),
                         transition: 'background 0.15s',
-                        borderLeft: isExpanded ? `4px solid ${tierColor}` : '4px solid transparent'
+                        borderLeft: isTarget ? '4px solid #003366' : (isExpanded ? `4px solid ${tierColor}` : '4px solid transparent'),
+                        boxShadow: isTarget ? 'inset 0 0 0 1px #93C5FD' : 'none',
                       }}
                     >
                       <td style={{ fontWeight: '600', color: '#9CA3AF', fontSize: '12px' }}>{idx + 1}</td>
-                      <td style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: '700', color: '#003366' }}>{t.taskId}</td>
+                      <td style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: '700', color: '#003366' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span>{t.taskId || t.task_id}</span>
+                          {isTarget && (
+                            <span style={{ fontSize: '10px', background: '#003366', color: '#FFFFFF', padding: '2px 6px', borderRadius: '4px', fontWeight: '800' }}>
+                              TARGET
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td style={{ fontSize: '13px', fontWeight: '500' }}>{t.sectionName || t.sectionId}</td>
                       <td style={{ fontSize: '13px', color: '#374151', fontWeight: '500' }}>{t.defectType}</td>
                       <td>
@@ -292,47 +525,51 @@ export default function Prioritization() {
                         </span>
                       </td>
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                          <span
-                            title={`Safety Hazard: ${Math.round(safetyVal * 100)}% (Weight 35%)`}
-                            style={{
-                              fontSize: '11px', fontWeight: '700', padding: '2px 6px', borderRadius: '4px',
-                              background: '#FEE2E2', color: '#991B1B', border: '1px solid #FECACA', display: 'inline-flex', alignItems: 'center', gap: '3px'
-                            }}
-                          >
-                            <span>🛡️</span>
-                            <span>{Math.round(safetyVal * 100)}%</span>
-                          </span>
-                          <span
-                            title={`Overdue Factor: ${Math.round(overdueVal * 100)}% (Weight 25%)`}
-                            style={{
-                              fontSize: '11px', fontWeight: '700', padding: '2px 6px', borderRadius: '4px',
-                              background: '#FEF3C7', color: '#92400E', border: '1px solid #FDE68A', display: 'inline-flex', alignItems: 'center', gap: '3px'
-                            }}
-                          >
-                            <span>⏳</span>
-                            <span>{Math.round(overdueVal * 100)}%</span>
-                          </span>
-                          <span
-                            title={`Traffic Density: ${Math.round(trafficVal * 100)}% (Weight 20%)`}
-                            style={{
-                              fontSize: '11px', fontWeight: '700', padding: '2px 6px', borderRadius: '4px',
-                              background: '#DBEAFE', color: '#1E40AF', border: '1px solid #BFDBFE', display: 'inline-flex', alignItems: 'center', gap: '3px'
-                            }}
-                          >
-                            <span>🚦</span>
-                            <span>{Math.round(trafficVal * 100)}%</span>
-                          </span>
-                          <span
-                            title={`Recurrence History: ${Math.round(recurrenceVal * 100)}% (Weight 20%)`}
-                            style={{
-                              fontSize: '11px', fontWeight: '700', padding: '2px 6px', borderRadius: '4px',
-                              background: '#F3E8FF', color: '#6B21A8', border: '1px solid #E9D5FF', display: 'inline-flex', alignItems: 'center', gap: '3px'
-                            }}
-                          >
-                            <span>🔁</span>
-                            <span>{Math.round(recurrenceVal * 100)}%</span>
-                          </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <span
+                              style={{
+                                fontSize: '11px',
+                                fontWeight: '700',
+                                padding: '2px 8px',
+                                borderRadius: '6px',
+                                background: aiDriver.bg,
+                                color: aiDriver.color,
+                                border: `1px solid ${aiDriver.border}`,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                              }}
+                            >
+                              <span>{aiDriver.icon}</span>
+                              <span>{aiDriver.label}</span>
+                            </span>
+                            <span
+                              style={{
+                                fontSize: '11px',
+                                fontWeight: '600',
+                                color: '#64748B',
+                              }}
+                            >
+                              {aiDriver.badge}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span
+                              style={{
+                                fontSize: '12px',
+                                color: '#475569',
+                                fontWeight: '500',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                maxWidth: '320px',
+                              }}
+                              title={explanation}
+                            >
+                              {explanation}
+                            </span>
+                          </div>
                         </div>
                       </td>
                       <td style={{ fontSize: '15px', color: isExpanded ? '#003366' : '#9CA3AF', textAlign: 'center' }}>
@@ -347,27 +584,27 @@ export default function Prioritization() {
                             <div style={{ background: 'white', padding: '18px 20px', borderRadius: '10px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                                 <h4 style={{ fontSize: '13px', fontWeight: '800', color: '#1F2937', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  <FiShield style={{ color: tierColor }} />
-                                  Explainable Risk Weights
+                                  <FiCpu style={{ color: '#003366' }} />
+                                  Why AI Picked This Priority
                                 </h4>
                                 <span style={{ fontSize: '12px', fontWeight: '700', color: tierColor, background: `${tierColor}15`, padding: '2px 8px', borderRadius: '4px' }}>
-                                  Total Score: {Math.round(score * 100)}% ({tier})
+                                  Overall Score: {Math.round(score * 100)}% ({tier})
                                 </span>
                               </div>
 
                               {[
-                                { key: 'safety', label: 'Safety Hazard (35% Weight)', val: safetyVal, color: '#DC2626', icon: '🛡️', contrib: (safetyVal * 0.35).toFixed(2) },
-                                { key: 'overdue', label: 'Overdue Penalty (25% Weight)', val: overdueVal, color: '#F59E0B', icon: '⏳', contrib: (overdueVal * 0.25).toFixed(2) },
-                                { key: 'traffic', label: 'Corridor Traffic (20% Weight)', val: trafficVal, color: '#3B82F6', icon: '🚦', contrib: (trafficVal * 0.20).toFixed(2) },
-                                { key: 'recurrence', label: 'Historical Recurrence (20% Weight)', val: recurrenceVal, color: '#8B5CF6', icon: '🔁', contrib: (recurrenceVal * 0.20).toFixed(2) },
-                              ].map(({ key, label, val, color, icon, contrib }) => (
+                                { key: 'safety', label: 'Track Safety Risk', val: safetyVal, color: '#DC2626', icon: '🛡️', remark: safetyVal >= 0.8 ? 'High Danger' : safetyVal >= 0.5 ? 'Medium Concern' : 'Low Concern' },
+                                { key: 'overdue', label: 'Due Date & Delays', val: overdueVal, color: '#F59E0B', icon: '⏳', remark: overdueVal >= 0.7 ? 'Overdue' : overdueVal >= 0.3 ? 'Approaching Due Date' : 'On Time' },
+                                { key: 'traffic', label: 'Train Traffic Volume', val: trafficVal, color: '#3B82F6', icon: '🚆', remark: trafficVal >= 0.8 ? 'Very Busy Route' : trafficVal >= 0.5 ? 'Moderate Traffic' : 'Low Traffic' },
+                                { key: 'recurrence', label: 'Past Defect History', val: recurrenceVal, color: '#8B5CF6', icon: '🔁', remark: recurrenceVal >= 0.5 ? 'Happened Multiple Times' : recurrenceVal >= 0.2 ? 'Occasional Defect' : 'First Occurrence' },
+                              ].map(({ key, label, val, color, icon, remark }) => (
                                 <div key={key} style={{ marginBottom: '12px' }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
                                     <span style={{ color: '#4B5563', fontWeight: '600' }}>
                                       {icon} {label}
                                     </span>
                                     <span style={{ fontWeight: '700', color }}>
-                                      {Math.round(val * 100)}% <span style={{ color: '#9CA3AF', fontWeight: '500', fontSize: '11px' }}>({contrib} pts)</span>
+                                      {Math.round(val * 100)}% <span style={{ color: '#64748B', fontWeight: '500', fontSize: '11px' }}>({remark})</span>
                                     </span>
                                   </div>
                                   <div style={{ height: '7px', background: '#F1F5F9', borderRadius: '4px', overflow: 'hidden' }}>
@@ -377,7 +614,7 @@ export default function Prioritization() {
                               ))}
 
                               <div style={{ marginTop: '14px', paddingTop: '10px', borderTop: '1px dashed #E2E8F0', fontSize: '11px', color: '#64748B' }}>
-                                <strong>Formula:</strong> Score = (Safety × 0.35) + (Overdue × 0.25) + (Traffic × 0.20) + (History × 0.20)
+                                💡 <strong>How AI Works:</strong> Checks track safety rules, train timetable frequency, and overdue days to find what needs fixing first.
                               </div>
                             </div>
 
@@ -385,40 +622,63 @@ export default function Prioritization() {
                               <div>
                                 <h4 style={{ fontSize: '13px', fontWeight: '800', color: '#1F2937', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                   <FiInfo style={{ color: '#003366' }} />
-                                  Operational Context & Justification
+                                  Task Summary & AI Advice
                                 </h4>
 
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', fontSize: '12px', marginBottom: '14px' }}>
                                   <div style={{ background: '#F8FAFC', padding: '8px 12px', borderRadius: '6px' }}>
-                                    <span style={{ color: '#64748B', display: 'block', fontSize: '11px' }}>Corridor Section</span>
+                                    <span style={{ color: '#64748B', display: 'block', fontSize: '11px' }}>Track Section</span>
                                     <strong style={{ color: '#1E293B' }}>{t.sectionName || t.sectionId}</strong>
                                   </div>
                                   <div style={{ background: '#F8FAFC', padding: '8px 12px', borderRadius: '6px' }}>
-                                    <span style={{ color: '#64748B', display: 'block', fontSize: '11px' }}>Telemetry Source</span>
-                                    <strong style={{ color: '#1E293B' }}>{t.sourceSystem || 'TMS'} ({t.department})</strong>
+                                    <span style={{ color: '#64748B', display: 'block', fontSize: '11px' }}>Department</span>
+                                    <strong style={{ color: '#1E293B' }}>{t.department}</strong>
                                   </div>
                                   <div style={{ background: '#F8FAFC', padding: '8px 12px', borderRadius: '6px' }}>
-                                    <span style={{ color: '#64748B', display: 'block', fontSize: '11px' }}>Due Date</span>
+                                    <span style={{ color: '#64748B', display: 'block', fontSize: '11px' }}>Target Due Date</span>
                                     <strong style={{ color: '#1E293B' }}>{new Date(t.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</strong>
                                   </div>
                                   <div style={{ background: '#F8FAFC', padding: '8px 12px', borderRadius: '6px' }}>
-                                    <span style={{ color: '#64748B', display: 'block', fontSize: '11px' }}>Required Possession</span>
+                                    <span style={{ color: '#64748B', display: 'block', fontSize: '11px' }}>Time Required</span>
                                     <strong style={{ color: '#1E293B' }}>{formatDuration(t.estimatedDuration)}</strong>
                                   </div>
                                 </div>
 
                                 <div style={{ padding: '12px 14px', background: '#F0F9FF', borderRadius: '8px', borderLeft: '4px solid #0284C7', fontSize: '12px', color: '#0369A1', lineHeight: '1.6' }}>
-                                  <strong>AI Engine Decision Note:</strong><br />
-                                  {t.reasoning || t.notes || `Assigned ${tier} priority. Defect severity (${t.defectType}) warrants scheduled joint block possession within optimal traffic window.`}
+                                  <strong>💡 AI Recommendation:</strong><br />
+                                  {explanation}
                                 </div>
                               </div>
 
                               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #F1F5F9' }}>
                                 <button
+                                  className="btn btn-sm"
+                                  style={{
+                                    background: '#003366',
+                                    color: '#FFFFFF',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    fontWeight: '700',
+                                  }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate('/assistant', {
+                                      state: {
+                                        query: `Analyze defect task ${t.taskId} (${t.defectType}) on section ${t.sectionName || t.sectionId}. What is the safety risk and what night maintenance block should we request?`
+                                      }
+                                    });
+                                  }}
+                                >
+                                  🤖 Ask AI Advice
+                                </button>
+                                <button
                                   className="btn btn-primary btn-sm"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    navigate('/schedules');
+                                    const sec = t.sectionId || t.section_id || '';
+                                    const tid = t.taskId || t.task_id || '';
+                                    navigate(`/schedules?corridor=${encodeURIComponent(sec)}&taskId=${encodeURIComponent(tid)}`);
                                   }}
                                   style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}
                                 >
@@ -454,7 +714,7 @@ export default function Prioritization() {
           {tasks.length === 0 && (
             <button className="btn btn-primary" onClick={handleSeedData} disabled={seeding} style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '0 auto' }}>
               <FiDatabase />
-              {seeding ? 'Seeding Mock Data...' : 'Seed Initial Mock Data'}
+              {seeding ? 'Syncing Telemetry Records...' : 'Sync System Telemetry'}
             </button>
           )}
         </div>

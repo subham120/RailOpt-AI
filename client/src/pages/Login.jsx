@@ -19,19 +19,23 @@ export default function Login() {
       await login(email, password);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+      const msg = err.response?.data?.detail || err.response?.data?.message || 'Login failed. Please check your credentials.';
+      setError(typeof msg === 'string' ? msg : JSON.stringify(msg));
     } finally {
       setLoading(false);
     }
   };
 
   const demoAccounts = [
-    { email: 'admin@railways.gov.in', password: 'admin123', label: 'Admin', color: '#003366' },
-    { email: 'engineering@railways.gov.in', password: 'eng123', label: 'Engineering', color: '#1A5276' },
-    { email: 'trd@railways.gov.in', password: 'trd123', label: 'TRD (OHE)', color: '#FF671F' },
-    { email: 'signal@railways.gov.in', password: 'sig123', label: 'S&T (Signal)', color: '#046A38' },
-    { email: 'control@railways.gov.in', password: 'control123', label: 'Control Office', color: '#6B21A8' },
+    { email: 'admin@railways.gov.in', password: 'RailAdmin@120', label: 'Admin (Railways)', color: '#003366' },
+    { email: 'control@railways.gov.in', password: 'RailControl@120', label: 'Section Controller', color: '#6B21A8' },
+    { email: 'engineering@railways.gov.in', password: 'RailEng@120', label: 'Engineering (P-Way)', color: '#1A5276' },
+    { email: 'signal@railways.gov.in', password: 'RailSt@120', label: 'S&T (Signal)', color: '#046A38' },
+    { email: 'trd@railways.gov.in', password: 'RailTrd@120', label: 'TRD (OHE)', color: '#FF671F' },
+    { email: 'admin@railopt.gov.in', password: 'Admin@123', label: 'Admin (123)', color: '#002244' },
   ];
+
+
 
   return (
     <div style={{

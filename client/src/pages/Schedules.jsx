@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { scheduleAPI, reportAPI } from '../services/api';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { scheduleAPI, reportAPI, timetableAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { DEPARTMENTS, STATUS_CONFIG, formatDuration } from '../utils/constants';
 import {
@@ -20,10 +21,20 @@ import {
   FiCheck,
   FiX,
   FiInfo,
+  FiSearch,
 } from 'react-icons/fi';
 
 export default function Schedules() {
-  const { canApprove } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const targetScheduleId = searchParams.get('scheduleId') || '';
+  const targetCorridor = searchParams.get('corridor') || searchParams.get('section') || '';
+  const targetTaskId = searchParams.get('taskId') || '';
+  const urlSearch = searchParams.get('search') || '';
+  const targetTrain = searchParams.get('train') || '';
+
+  const { canApprove, activeZone } = useAuth();
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -34,18 +45,64 @@ export default function Schedules() {
   const [selectedWeek, setSelectedWeek] = useState('all'); // for monthly: 'all' | '1'..'4'
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [filterDept, setFilterDept] = useState('');
-  const [filterSection, setFilterSection] = useState('');
+  const [filterSection, setFilterSection] = useState(targetCorridor || '');
+  const [searchTerm, setSearchTerm] = useState(urlSearch || targetScheduleId || targetTaskId || '');
   const [toast, setToast] = useState(null);
+
+  // Real-Time Conflict Detector State
+  const [showConflictModal, setShowConflictModal] = useState(false);
+  const [conflictForm, setConflictForm] = useState({
+    sectionId: targetCorridor || 'ALD-MGS',
+    startTime: '05:30',
+    endTime: '08:00',
+    dayOfWeek: 1,
+  });
+  const [conflictResult, setConflictResult] = useState(null);
+  const [conflictChecking, setConflictChecking] = useState(false);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 4000);
   };
 
+  const runConflictCheck = async (overrideParams) => {
+    setConflictChecking(true);
+    try {
+      const sec = overrideParams?.sectionId || conflictForm.sectionId;
+      const startStr = overrideParams?.startTime || conflictForm.startTime;
+      const endStr = overrideParams?.endTime || conflictForm.endTime;
+      const [sh, sm] = startStr.split(':').map(Number);
+      const [eh, em] = endStr.split(':').map(Number);
+      const sMin = sh * 60 + sm;
+      const eMin = eh * 60 + em;
+
+      const res = await timetableAPI.checkConflict({
+        section_id: sec,
+        window_start_min: sMin,
+        window_end_min: eMin,
+        day_of_week: conflictForm.dayOfWeek,
+      });
+      setConflictResult(res.data);
+      if (res.data?.hasConflict) {
+        showToast(`⚠️ Conflict Detected: ${res.data.conflicts.length} train overlap(s)`, 'error');
+      } else {
+        showToast('✅ Clear: No train conflicts in this window!', 'success');
+      }
+    } catch (err) {
+      showToast('Conflict check failed: ' + (err.response?.data?.message || err.message), 'error');
+    } finally {
+      setConflictChecking(false);
+    }
+  };
+
   const fetchSchedules = async () => {
     setLoading(true);
     try {
-      const res = await scheduleAPI.getAll({ limit: 400 });
+      const params = { limit: 1000 };
+      if (activeZone && activeZone !== 'ALL') {
+        params.zone = activeZone;
+      }
+      const res = await scheduleAPI.getAll(params);
       setSchedules(res.data.data || []);
     } catch (err) {
       console.error('Failed to load schedules:', err);
@@ -56,14 +113,87 @@ export default function Schedules() {
 
   useEffect(() => {
     fetchSchedules();
-  }, []);
+  }, [activeZone]);
+
+  // Deep-linking URL parameter synchronization effect
+  useEffect(() => {
+    if (!schedules.length) return;
+
+    // 1. Direct Schedule ID link
+    if (targetScheduleId) {
+      const q = targetScheduleId.toLowerCase();
+      const found = schedules.find(s =>
+        (s.scheduleId && s.scheduleId.toLowerCase() === q) ||
+        (s._id && s._id.toLowerCase() === q) ||
+        (s.scheduleId && s.scheduleId.toLowerCase().includes(q))
+      );
+      if (found) {
+        if (found.planType && found.planType !== planType) {
+          setPlanType(found.planType);
+        }
+        if (found.sectionId && !filterSection) {
+          setFilterSection(found.sectionId);
+        }
+        setSelectedEvent(found);
+        setTimeout(() => {
+          const el = document.getElementById(`sched-item-${found.scheduleId || found._id}`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 350);
+      }
+    }
+    // 2. Direct Task ID link
+    else if (targetTaskId) {
+      const q = targetTaskId.toLowerCase();
+      const found = schedules.find(s =>
+        (s.taskIds && s.taskIds.some(tid => tid.toLowerCase() === q)) ||
+        (s.tasks && s.tasks.some(t => (t.taskId || t.task_id || '').toLowerCase() === q)) ||
+        (s.description && s.description.toLowerCase().includes(q))
+      );
+      if (found) {
+        if (found.planType && found.planType !== planType) {
+          setPlanType(found.planType);
+        }
+        if (found.sectionId) {
+          setFilterSection(found.sectionId);
+        }
+        setSelectedEvent(found);
+        setTimeout(() => {
+          const el = document.getElementById(`sched-item-${found.scheduleId || found._id}`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 350);
+      }
+    }
+    // 3. Direct Corridor link
+    else if (targetCorridor) {
+      setFilterSection(targetCorridor);
+    }
+
+    // 4. Direct Train link
+    if (targetTrain) {
+      setShowConflictModal(true);
+      const sec = targetCorridor || 'NDLS-GZB';
+      setConflictForm(prev => ({ ...prev, sectionId: sec }));
+      runConflictCheck({ sectionId: sec, startTime: '00:30', endTime: '04:30' });
+      showToast(`Inspecting train schedule and conflicts for Train ${targetTrain}`);
+    }
+  }, [schedules, targetScheduleId, targetCorridor, targetTaskId, targetTrain]);
 
   const handleGenerate = async () => {
     setGenerating(true);
     try {
-      const res = await scheduleAPI.generate({ planType });
+      const payload = {
+        planType,
+        plan_type: planType,
+        ...(activeZone && activeZone !== 'ALL' ? { zone: activeZone } : {}),
+      };
+      const res = await scheduleAPI.generate(payload);
       await fetchSchedules();
-      showToast(`RailOpt AI Optimization complete: ${res.data.count || 0} ${planType.toUpperCase()} block schedules generated.`);
+      const count = res.data.summary?.total || res.data.data?.length || 0;
+      showToast(`RailOpt AI: Generated ${count} ${planType.toUpperCase()} block schedules.`);
     } catch (err) {
       showToast('Optimization failed: ' + (err.response?.data?.message || err.message), 'error');
     } finally {
@@ -132,21 +262,43 @@ export default function Schedules() {
     return 'evening';
   };
 
-  // Filter schedules by horizon, shift/day/week, department, and section
+  // Filter schedules by horizon, shift/day/week, department, section, and keyword search
   const filteredSchedules = schedules.filter(s => {
     const sPlan = s.planType || 'weekly';
+    const isTargetSched = targetScheduleId && (
+      (s.scheduleId && s.scheduleId.toLowerCase() === targetScheduleId.toLowerCase()) ||
+      (s._id && s._id.toLowerCase() === targetScheduleId.toLowerCase())
+    );
+
+    // If this is the directly targeted schedule, keep it visible regardless of sub-filters
+    if (isTargetSched) return true;
+
     if (sPlan !== planType) return false;
     if (filterDept && !(s.departments || []).includes(filterDept)) return false;
     if (filterSection && s.sectionId !== filterSection) return false;
 
+    // Search term filter (matches scheduleId, section, department, tasks, description)
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      const sId = (s.scheduleId || '').toLowerCase();
+      const sec = (s.sectionName || s.sectionId || '').toLowerCase();
+      const depts = (s.departments || []).join(' ').toLowerCase();
+      const taskMatches = (s.taskIds || []).some(tid => tid.toLowerCase().includes(q)) ||
+                          (s.tasks || []).some(t => (t.taskId || t.task_id || '').toLowerCase().includes(q));
+      const desc = (s.defectType || s.description || '').toLowerCase();
+      if (!sId.includes(q) && !sec.includes(q) && !depts.includes(q) && !taskMatches && !desc.includes(q)) {
+        return false;
+      }
+    }
+
     // Daily Shift filter
-    if (planType === 'daily' && selectedShift !== 'all') {
+    if (planType === 'daily' && selectedShift !== 'all' && !targetScheduleId) {
       const shift = getShiftCategory(s.assignedWindow);
       if (shift !== selectedShift) return false;
     }
 
     // Weekly Day filter
-    if (planType === 'weekly' && selectedDay !== 'all') {
+    if (planType === 'weekly' && selectedDay !== 'all' && !targetScheduleId) {
       if (!s.assignedWindow?.start) return false;
       const d = new Date(s.assignedWindow.start).getDay();
       if (d.toString() !== selectedDay) return false;
@@ -329,6 +481,7 @@ export default function Schedules() {
             </button>
           )}
 
+
           <button className="btn btn-outline btn-sm" onClick={() => handleExport('xlsx')} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <FiDownload /> Export Excel
           </button>
@@ -404,12 +557,35 @@ export default function Schedules() {
 
       {/* Filter & Legend Bar */}
       <div className="card" style={{ padding: '16px 20px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-        {/* Filters */}
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '13px', fontWeight: '600', color: '#6B7280' }}>Corridor / Dept:</span>
+        {/* Filters & Search */}
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', flex: 1 }}>
+          {/* Quick Search Box */}
+          <div style={{ position: 'relative', minWidth: '220px', maxWidth: '300px', flex: 1 }}>
+            <FiSearch style={{ position: 'absolute', left: '10px', top: '10px', color: '#9CA3AF' }} />
+            <input
+              type="text"
+              className="input"
+              placeholder="Search schedule ID, task, section..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              style={{ paddingLeft: '32px', fontSize: '13px', width: '100%' }}
+            />
+            {searchTerm && (
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setSearchParams({});
+                }}
+                style={{ position: 'absolute', right: '8px', top: '8px', background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer' }}
+              >
+                <FiX />
+              </button>
+            )}
+          </div>
+
           <select
             className="input select"
-            style={{ width: '180px', padding: '6px 12px', fontSize: '13px' }}
+            style={{ width: '170px', padding: '6px 12px', fontSize: '13px' }}
             value={filterDept}
             onChange={e => setFilterDept(e.target.value)}
           >
@@ -421,7 +597,7 @@ export default function Schedules() {
 
           <select
             className="input select"
-            style={{ width: '180px', padding: '6px 12px', fontSize: '13px' }}
+            style={{ width: '170px', padding: '6px 12px', fontSize: '13px' }}
             value={filterSection}
             onChange={e => setFilterSection(e.target.value)}
           >
@@ -430,6 +606,49 @@ export default function Schedules() {
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
+
+          {/* Active target pills */}
+          {targetScheduleId && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              background: '#EEF2FF', border: '1px solid #C7D2FE',
+              padding: '4px 10px', borderRadius: '16px', fontSize: '12px', fontWeight: '700', color: '#4338CA',
+            }}>
+              <span>🎯 Schedule: {targetScheduleId}</span>
+              <button
+                onClick={() => {
+                  const p = new URLSearchParams(searchParams);
+                  p.delete('scheduleId');
+                  setSearchParams(p);
+                  setSearchTerm('');
+                }}
+                style={{ background: 'none', border: 'none', color: '#4338CA', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+              >
+                <FiX />
+              </button>
+            </div>
+          )}
+
+          {targetTaskId && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              background: '#EFF6FF', border: '1px solid #93C5FD',
+              padding: '4px 10px', borderRadius: '16px', fontSize: '12px', fontWeight: '700', color: '#1D4ED8',
+            }}>
+              <span>🔧 Task: {targetTaskId}</span>
+              <button
+                onClick={() => {
+                  const p = new URLSearchParams(searchParams);
+                  p.delete('taskId');
+                  setSearchParams(p);
+                  setSearchTerm('');
+                }}
+                style={{ background: 'none', border: 'none', color: '#1D4ED8', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+              >
+                <FiX />
+              </button>
+            </div>
+          )}
 
           <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: '600' }}>
             {filteredSchedules.length} block sessions active in {planType} view
@@ -467,13 +686,22 @@ export default function Schedules() {
             <FiShield />
           </div>
           <h3 style={{ fontSize: '18px', fontWeight: '700', margin: '0 0 8px', color: '#0F172A' }}>
-            No Maintenance Possession Blocks in Selected View
+            No {planType.toUpperCase()} Block Schedules Found
           </h3>
-          <p style={{ fontSize: '14px', color: '#64748B', maxWidth: '520px', margin: '0 auto', lineHeight: 1.6 }}>
+          <p style={{ fontSize: '14px', color: '#64748B', maxWidth: '520px', margin: '0 auto 18px', lineHeight: 1.6 }}>
             {selectedShift !== 'all' || filterDept || filterSection
-              ? 'No block requests match the current corridor, department, or shift filter. Train operations are running normally with 100% line throughput.'
-              : `No ${planType.toUpperCase()} block schedules are currently active. Click the "Optimize ${planType.toUpperCase()} Plan" button in the top action bar to run constraint scheduling.`}
+              ? 'No block requests match the current corridor, department, or shift filter.'
+              : `No ${planType.toUpperCase()} block schedules are generated yet. Click the button below to have AI optimize and generate possession windows.`}
           </p>
+          <button
+            className="btn btn-primary"
+            onClick={handleGenerate}
+            disabled={generating}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', margin: '0 auto' }}
+          >
+            <FiZap style={{ color: '#FBBF24' }} />
+            <span>{generating ? `AI is Optimizing ${planType.toUpperCase()} Plan...` : `⚡ Generate ${planType.toUpperCase()} Schedule Now`}</span>
+          </button>
         </div>
       ) : viewMode === 'gantt' ? (
         /* ─── Modular Staggered Gantt Corridor Grid (Zero Overlaps) ─── */
@@ -534,20 +762,25 @@ export default function Schedules() {
                         const isMulti = (sched.departments || []).length > 1;
                         const primaryDept = sched.departments?.[0] || 'Engineering';
                         const deptCfg = DEPARTMENTS[primaryDept] || { color: '#1A5276', bg: '#E6EDF5' };
+                        const isTarget = (targetScheduleId && (
+                          (sched.scheduleId && sched.scheduleId.toLowerCase() === targetScheduleId.toLowerCase()) ||
+                          (sched._id && sched._id.toLowerCase() === targetScheduleId.toLowerCase())
+                        )) || (selectedEvent?._id === sched._id);
 
                         return (
                           <div
                             key={sched._id || sIdx}
+                            id={`sched-item-${sched.scheduleId || sched._id}`}
                             onClick={() => setSelectedEvent(sched)}
                             style={{
-                              background: '#FFFFFF',
-                              border: `1.5px solid ${isMulti ? '#7C3AED' : deptCfg.color}`,
-                              borderLeft: `5px solid ${isMulti ? '#6B21A8' : deptCfg.color}`,
+                              background: isTarget ? '#F0F9FF' : '#FFFFFF',
+                              border: isTarget ? '2px solid #003366' : `1.5px solid ${isMulti ? '#7C3AED' : deptCfg.color}`,
+                              borderLeft: isTarget ? '6px solid #FF671F' : `5px solid ${isMulti ? '#6B21A8' : deptCfg.color}`,
                               borderRadius: '8px',
                               padding: '10px 14px',
                               minWidth: '220px',
                               maxWidth: '320px',
-                              boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                              boxShadow: isTarget ? '0 0 0 3px rgba(0, 51, 102, 0.2), 0 8px 20px rgba(0,0,0,0.12)' : '0 1px 4px rgba(0,0,0,0.06)',
                               cursor: 'pointer',
                               transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                               position: 'relative',
@@ -558,7 +791,7 @@ export default function Schedules() {
                             }}
                             onMouseLeave={e => {
                               e.currentTarget.style.transform = 'none';
-                              e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)';
+                              e.currentTarget.style.boxShadow = isTarget ? '0 0 0 3px rgba(0, 51, 102, 0.2)' : '0 1px 4px rgba(0,0,0,0.06)';
                             }}
                           >
                             {/* Top row: Date/Shift & Status */}
@@ -567,14 +800,24 @@ export default function Schedules() {
                                 <FiCalendar style={{ fontSize: '12px', color: '#003366' }} />
                                 {planType === 'daily' ? 'Today' : formatDateLabel(sched.assignedWindow)}
                               </span>
-                              <span style={{
-                                fontSize: '10px', fontWeight: '700', textTransform: 'uppercase',
-                                padding: '2px 6px', borderRadius: '4px',
-                                background: STATUS_CONFIG[sched.status]?.bg || '#F3F4F6',
-                                color: STATUS_CONFIG[sched.status]?.color || '#4B5563',
-                              }}>
-                                {sched.status}
-                              </span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                {isTarget && (
+                                  <span style={{
+                                    fontSize: '9px', fontWeight: '800', background: '#003366', color: '#FFFFFF',
+                                    padding: '2px 5px', borderRadius: '3px'
+                                  }}>
+                                    TARGET
+                                  </span>
+                                )}
+                                <span style={{
+                                  fontSize: '10px', fontWeight: '700', textTransform: 'uppercase',
+                                  padding: '2px 6px', borderRadius: '4px',
+                                  background: STATUS_CONFIG[sched.status]?.bg || '#F3F4F6',
+                                  color: STATUS_CONFIG[sched.status]?.color || '#4B5563',
+                                }}>
+                                  {sched.status}
+                                </span>
+                              </div>
                             </div>
 
                             {/* Middle row: Time Window & Duration */}
@@ -582,6 +825,18 @@ export default function Schedules() {
                               <FiClock style={{ fontSize: '13px' }} />
                               {formatTimeRange(sched.assignedWindow)} ({formatDuration(sched.totalDurationMinutes)})
                             </div>
+
+                            {/* TTT Conflict Alert Badge */}
+                            {sched.tttConflicts && sched.tttConflicts.length > 0 && (
+                              <div style={{
+                                background: '#FEF2F2', border: '1px solid #FCA5A5', color: '#B91C1C',
+                                borderRadius: '4px', padding: '3px 6px', fontSize: '10px', fontWeight: '700',
+                                marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px'
+                              }}>
+                                <span>⚠️ TTT Conflict:</span>
+                                <span>{sched.tttConflicts.length} train overlap(s)</span>
+                              </div>
+                            )}
 
                             {/* Bottom row: Departments */}
                             <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -631,9 +886,33 @@ export default function Schedules() {
               </tr>
             </thead>
             <tbody>
-              {filteredSchedules.map((s, i) => (
-                <tr key={s._id || i} style={{ cursor: 'pointer' }} onClick={() => setSelectedEvent(s)}>
-                  <td style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: '600' }}>{s.scheduleId}</td>
+              {filteredSchedules.map((s, i) => {
+                const isTarget = (targetScheduleId && (
+                  (s.scheduleId && s.scheduleId.toLowerCase() === targetScheduleId.toLowerCase()) ||
+                  (s._id && s._id.toLowerCase() === targetScheduleId.toLowerCase())
+                )) || (selectedEvent?._id === s._id);
+
+                return (
+                  <tr
+                    key={s._id || i}
+                    id={`sched-item-${s.scheduleId || s._id}`}
+                    style={{
+                      cursor: 'pointer',
+                      background: isTarget ? '#EFF6FF' : 'transparent',
+                      borderLeft: isTarget ? '4px solid #003366' : '4px solid transparent',
+                    }}
+                    onClick={() => setSelectedEvent(s)}
+                  >
+                    <td style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: '700', color: '#003366' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>{s.scheduleId}</span>
+                        {isTarget && (
+                          <span style={{ fontSize: '9px', background: '#003366', color: '#FFFFFF', padding: '1px 5px', borderRadius: '3px', fontWeight: '800' }}>
+                            TARGET
+                          </span>
+                        )}
+                      </div>
+                    </td>
                   <td style={{ fontSize: '13px', fontWeight: '600' }}>{s.sectionName || s.sectionId}</td>
                   <td style={{ fontSize: '12px', whiteSpace: 'nowrap' }}>{formatDateLabel(s.assignedWindow)}</td>
                   <td style={{ fontSize: '12px', whiteSpace: 'nowrap' }}>{formatTimeRange(s.assignedWindow)}</td>
@@ -673,7 +952,8 @@ export default function Schedules() {
                     )}
                   </td>
                 </tr>
-              ))}
+              );
+            })}
             </tbody>
           </table>
         </div>
@@ -773,6 +1053,43 @@ export default function Schedules() {
                 </div>
               )}
 
+              {/* TTT Conflicts Alert */}
+              {selectedEvent.tttConflicts && selectedEvent.tttConflicts.length > 0 && (
+                <div style={{
+                  padding: '14px 18px', background: '#FEF2F2', borderRadius: '10px',
+                  marginBottom: '18px', borderLeft: '4px solid #EF4444', border: '1px solid #FCA5A5'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '16px' }}>⚠️</span>
+                    <span style={{ fontSize: '13px', fontWeight: '800', color: '#991B1B' }}>
+                      Real-Time Train Timetable (TTT) Conflict Detected
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '12px', color: '#7F1D1D', margin: '0 0 10px', lineHeight: 1.4 }}>
+                    The following train(s) overlap with this scheduled maintenance window:
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {selectedEvent.tttConflicts.map((c, cIdx) => (
+                      <div key={cIdx} style={{
+                        background: '#FFFFFF', padding: '8px 12px', borderRadius: '6px',
+                        border: '1px solid #FECACA', display: 'flex', justifyContent: 'space-between',
+                        alignItems: 'center', fontSize: '12px'
+                      }}>
+                        <span style={{ fontWeight: '700', color: '#991B1B' }}>
+                          🚆 Conflict with #{c.trainNo} {c.trainName || ''}
+                        </span>
+                        <span style={{
+                          fontWeight: '700', background: '#FEE2E2', color: '#B91C1C',
+                          padding: '2px 8px', borderRadius: '4px'
+                        }}>
+                          {c.overlapMinutes ? `${c.overlapMinutes} mins overlap` : 'Direct Overlap'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* AI Reasoning */}
               {selectedEvent.aiRecommendation?.reasoning && (
                 <div style={{ padding: '12px 16px', background: '#EFF6FF', borderRadius: '8px', marginBottom: '20px', fontSize: '12px', color: '#1D4ED8', borderLeft: '4px solid #3B82F6', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
@@ -786,6 +1103,29 @@ export default function Schedules() {
 
               {/* Actions */}
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', paddingTop: '16px', borderTop: '1px solid #E5E7EB' }}>
+                <button
+                  className="btn"
+                  style={{
+                    background: '#003366',
+                    color: '#FFFFFF',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontWeight: '700',
+                    fontSize: '13px',
+                  }}
+                  onClick={() => {
+                    const sec = selectedEvent.sectionName || selectedEvent.sectionId || 'Corridor';
+                    const sId = selectedEvent.scheduleId || selectedEvent._id || 'Block';
+                    navigate('/assistant', {
+                      state: {
+                        query: `Analyze maintenance block ${sId} on corridor ${sec} (${selectedEvent.totalDurationMinutes || 120} mins). Are there any train timetable conflicts or joint bundling recommendations?`
+                      }
+                    });
+                  }}
+                >
+                  🤖 Ask AI Advisor
+                </button>
                 <button className="btn btn-outline" onClick={() => setSelectedEvent(null)}>Close</button>
                 {canApprove && selectedEvent.status === 'proposed' && (
                   <>
@@ -797,6 +1137,235 @@ export default function Schedules() {
                     </button>
                   </>
                 )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ─── Real-Time Conflict Simulator & Detector Modal ─── */}
+      {showConflictModal && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', zIndex: 1001, padding: '20px',
+            backdropFilter: 'blur(5px)',
+          }}
+          onClick={() => setShowConflictModal(false)}
+        >
+          <div
+            style={{
+              background: 'white', borderRadius: '16px', maxWidth: '640px', width: '100%',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.35)', overflow: 'hidden',
+            }}
+            onClick={e => e.stopPropagation()}
+            className="animate-fadeIn"
+          >
+            {/* Modal Header */}
+            <div style={{ background: 'linear-gradient(135deg, #7F1D1D 0%, #991B1B 100%)', padding: '22px 28px', color: 'white' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '12px', background: 'rgba(255,255,255,0.2)', padding: '3px 10px', borderRadius: '6px', fontWeight: '700' }}>
+                  🇮🇳 DATA SOURCE: data.gov.in (OGD Platform India)
+                </span>
+                <button
+                  onClick={() => setShowConflictModal(false)}
+                  style={{ background: 'none', border: 'none', color: 'white', fontSize: '18px', cursor: 'pointer' }}
+                >
+                  ✕
+                </button>
+              </div>
+              <h3 style={{ fontSize: '20px', fontWeight: '800', margin: '10px 0 4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>⚠️</span> Real-Time Train Conflict Detector
+              </h3>
+              <p style={{ fontSize: '13px', opacity: 0.9, margin: 0, lineHeight: 1.4 }}>
+                Real Indian Railways schedules from <b>data.gov.in</b> (COA Timetable) are mapped to detect live train passage conflicts against planned maintenance blocks.
+              </p>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '24px 28px' }}>
+              {/* Quick Presets */}
+              <div style={{ marginBottom: '18px' }}>
+                <p style={{ fontSize: '12px', fontWeight: '700', color: '#4B5563', margin: '0 0 8px', textTransform: 'uppercase' }}>
+                  Quick Demonstration Presets
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConflictForm({ sectionId: 'ALD-MGS', startTime: '05:45', endTime: '07:15', dayOfWeek: 1 });
+                      runConflictCheck({ sectionId: 'ALD-MGS', startTime: '05:45', endTime: '07:15' });
+                    }}
+                    style={{
+                      padding: '10px 14px', borderRadius: '8px', border: '1.5px solid #FCA5A5',
+                      background: '#FEF2F2', textAlign: 'left', cursor: 'pointer', transition: 'all 0.2s',
+                    }}
+                  >
+                    <p style={{ fontSize: '12px', fontWeight: '700', color: '#991B1B', margin: '0 0 2px' }}>
+                      🚆 Test #12301 Morning Rajdhani
+                    </p>
+                    <span style={{ fontSize: '11px', color: '#7F1D1D' }}>
+                      ALD-MGS • 05:45 to 07:15 (Overlaps 06:00-06:40)
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConflictForm({ sectionId: 'ALD-MGS', startTime: '00:30', endTime: '02:00', dayOfWeek: 1 });
+                      runConflictCheck({ sectionId: 'ALD-MGS', startTime: '00:30', endTime: '02:00' });
+                    }}
+                    style={{
+                      padding: '10px 14px', borderRadius: '8px', border: '1.5px solid #FDE68A',
+                      background: '#FFFBEB', textAlign: 'left', cursor: 'pointer', transition: 'all 0.2s',
+                    }}
+                  >
+                    <p style={{ fontSize: '12px', fontWeight: '700', color: '#92400E', margin: '0 0 2px' }}>
+                      🌙 Test #12424 Night Express
+                    </p>
+                    <span style={{ fontSize: '11px', color: '#B45309' }}>
+                      ALD-MGS • 00:30 to 02:00 (Overlaps 00:45-01:25)
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Form Controls */}
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '12px', marginBottom: '18px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#4B5563', marginBottom: '4px', textTransform: 'uppercase' }}>
+                    Corridor Section
+                  </label>
+                  <select
+                    value={conflictForm.sectionId}
+                    onChange={e => setConflictForm(prev => ({ ...prev, sectionId: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #D1D5DB', fontSize: '13px', fontWeight: '600' }}
+                  >
+                    <option value="ALD-MGS">ALD-MGS (Prayagraj - Mughalsarai)</option>
+                    <option value="NR-DLI-GZB-01">NR-DLI-GZB-01 (Delhi - Ghaziabad)</option>
+                    <option value="NR-GZB-CNB-01">NR-GZB-CNB-01 (Ghaziabad - Kanpur)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#4B5563', marginBottom: '4px', textTransform: 'uppercase' }}>
+                    Window Start
+                  </label>
+                  <input
+                    type="time"
+                    value={conflictForm.startTime}
+                    onChange={e => setConflictForm(prev => ({ ...prev, startTime: e.target.value }))}
+                    style={{ width: '100%', padding: '7px 8px', borderRadius: '6px', border: '1px solid #D1D5DB', fontSize: '13px' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#4B5563', marginBottom: '4px', textTransform: 'uppercase' }}>
+                    Window End
+                  </label>
+                  <input
+                    type="time"
+                    value={conflictForm.endTime}
+                    onChange={e => setConflictForm(prev => ({ ...prev, endTime: e.target.value }))}
+                    style={{ width: '100%', padding: '7px 8px', borderRadius: '6px', border: '1px solid #D1D5DB', fontSize: '13px' }}
+                  />
+                </div>
+              </div>
+
+              {/* Check Action Button */}
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => runConflictCheck()}
+                disabled={conflictChecking}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px 16px', marginBottom: '18px' }}
+              >
+                <FiZap style={{ color: '#FBBF24' }} />
+                <span>{conflictChecking ? 'Checking Timetable for Overlaps...' : '⚡ Check Live Section Conflict'}</span>
+              </button>
+
+              {/* Conflict Result Card */}
+              {conflictResult && (
+                <div className="animate-fadeIn">
+                  {conflictResult.hasConflict ? (
+                    <div style={{
+                      padding: '16px 20px', background: '#FEF2F2', borderRadius: '10px',
+                      border: '1.5px solid #F87171', borderLeft: '6px solid #DC2626'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '20px' }}>⚠️</span>
+                          <span style={{ fontSize: '14px', fontWeight: '800', color: '#991B1B' }}>
+                            TTT Conflict Alert Triggered!
+                          </span>
+                        </div>
+                        <span style={{
+                          background: '#DC2626', color: 'white', fontSize: '11px',
+                          fontWeight: '800', padding: '3px 8px', borderRadius: '4px'
+                        }}>
+                          BLOCKED
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
+                        {conflictResult.conflicts.map((c, idx) => (
+                          <div key={idx} style={{
+                            background: '#FFFFFF', padding: '10px 14px', borderRadius: '8px',
+                            border: '1px solid #FECACA', display: 'flex', justifyContent: 'space-between',
+                            alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                          }}>
+                            <div>
+                              <p style={{ fontSize: '13px', fontWeight: '800', color: '#991B1B', margin: '0 0 2px' }}>
+                                🚆 Conflict with #{c.trainNo} {c.trainName || ''}
+                              </p>
+                              <span style={{ fontSize: '11px', color: '#6B7280', textTransform: 'capitalize' }}>
+                                Type: {c.trainType || 'Express'} • Includes ±15m safety buffer
+                              </span>
+                            </div>
+                            <span style={{
+                              fontWeight: '800', fontSize: '12px', background: '#FEE2E2',
+                              color: '#B91C1C', padding: '4px 10px', borderRadius: '6px'
+                            }}>
+                              {c.overlapMinutes} mins overlap
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* AI Suggested Resolutions */}
+                      <div style={{ background: '#FFFFFF', padding: '12px 14px', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
+                        <p style={{ fontSize: '11px', fontWeight: '800', color: '#003366', margin: '0 0 6px', textTransform: 'uppercase' }}>
+                          💡 AI Smart Resolution Options:
+                        </p>
+                        <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '12px', color: '#374151', lineHeight: 1.6 }}>
+                          <li><b>Auto-Shift Window:</b> Shift maintenance start to <b>07:45 AM</b> after #{conflictResult.conflicts[0]?.trainNo} clears.</li>
+                          <li><b>Loop Line Regulation:</b> Hold train at previous station loop line if emergency track welding is required.</li>
+                        </ul>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{
+                      padding: '18px 20px', background: '#F0FDF4', borderRadius: '10px',
+                      border: '1.5px solid #86EFAC', borderLeft: '6px solid #16A34A', display: 'flex', alignItems: 'center', gap: '12px'
+                    }}>
+                      <FiCheckCircle style={{ fontSize: '28px', color: '#16A34A', flexShrink: 0 }} />
+                      <div>
+                        <p style={{ fontSize: '14px', fontWeight: '800', color: '#166534', margin: '0 0 2px' }}>
+                          No Timetable Conflicts Detected
+                        </p>
+                        <p style={{ fontSize: '12px', color: '#15803D', margin: 0 }}>
+                          Track section is clear of scheduled passenger & express traffic. Safe for full possession.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Close Footer */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px', paddingTop: '14px', borderTop: '1px solid #E5E7EB' }}>
+                <button className="btn btn-outline" onClick={() => setShowConflictModal(false)}>
+                  Close Simulator
+                </button>
               </div>
             </div>
           </div>

@@ -1,0 +1,14 @@
+{
+  "n_samples": 3000,
+  "cv_rmse_mean": 0.04250501989959759,
+  "cv_rmse_std": 0.0009167522891613398,
+  "feature_importances": {
+    "safety": 0.6833029389381409,
+    "overdue": 0.16119197010993958,
+    "traffic": 0.10160638391971588,
+    "recurrence": 0.027912449091672897,
+    "inspection_gap": 0.025986285880208015
+  },
+  "model_path": "D:\\SIH-Prototype\\backend\\ai\\scoring\\models\\criticality_v2.pkl",
+  "trained_at": "2026-09-05"
+}

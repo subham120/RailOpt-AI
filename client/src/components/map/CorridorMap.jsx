@@ -427,7 +427,7 @@ export default function CorridorMap() {
           >
             {ZONAL_RAILWAYS.map(z => (
               <option key={z.code} value={z.code} style={{ background: '#0A2540', color: '#FFFFFF' }}>
-                {z.code === 'ALL' ? '🌐 All 18 Zones' : `${z.code} - ${z.name}`}
+                {z.code === 'ALL' ? 'All 18 Zones' : `${z.code} - ${z.name}`}
               </option>
             ))}
           </select>

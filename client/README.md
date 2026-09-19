@@ -1,16 +1,52 @@
-# React + Vite
+# RailOpt AI — Frontend Client
+### React 18 + Vite + TailwindCSS + UX4G Design System
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+The frontend interface for the **RailOpt AI** Indian Railways maintenance scheduling and block planning platform.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🎨 Design System & Accessibility
+- **UX4G Guidelines**: Built adhering to the Indian e-Governance design guidelines (MeitY / NeGD) with official Indian Railways colors:
+  - **Navy Blue**: `#003366`
+  - **Saffron Action**: `#FF671F`
+  - **India Green (Success)**: `#046A38`
+  - **Neutral Canvas**: `#F4F6F8`
+- **GIGW 3.0 Compliance**: Accessible color contrast, keyboard focus indicators, and screen-reader accessibility.
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 📂 Project Structure
 
-## Expanding the Oxlint configuration
+```
+client/src/
+├── components/         # Shared UI components
+│   └── layout/         # Header, Sidebar, Footer, ProtectedRoute
+├── context/            # Authentication and Role context (AuthContext)
+├── pages/              # Primary application views
+│   ├── Dashboard.jsx        # Operations overview, KPIs, Recharts
+│   ├── DataIntegration.jsx  # TMS/SMMS/TDMS telemetry & CSV upload
+│   ├── Prioritization.jsx   # Hybrid AI scoring & SHAP explanations
+│   ├── Schedules.jsx        # FullCalendar Gantt & joint block optimizer
+│   ├── Requests.jsx         # Block submission & approval queue
+│   ├── CorridorMapPage.jsx  # Geographic rail corridor visualizer
+│   ├── AssistantPage.jsx    # RailOpt AI copilot & alert monitor
+│   ├── Reports.jsx          # Section availability & Excel exports
+│   └── Login.jsx            # Multi-role authentication portal
+├── services/           # Axios API service integrations
+└── utils/              # Formatter utilities, constants, corridor segments
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+---
+
+## 🚀 Running Locally
+
+```bash
+# Install dependencies
+npm install
+
+# Start Vite development server on port 3000
+npm run dev
+
+# Build for production
+npm run build
+```

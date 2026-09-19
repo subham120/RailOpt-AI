@@ -1,0 +1,295 @@
+train_number,train_name,section_id,departure_time,arrival_time,frequency,train_type,days_of_run
+12001,New - Ghaziabad Vande Bharat Express,NDLS-GZB,07:15,08:55,Daily,Passenger,All Days
+12002,New - Ghaziabad Shatabdi Express,NDLS-GZB,18:30,19:25,Daily,Passenger,All Days
+12003,New - Ghaziabad Shatabdi Express,NDLS-GZB,07:15,10:40,Daily,Passenger,All Days
+12004,New - Ghaziabad POL Tanker Freight,NDLS-GZB,00:30,01:25,Daily,Freight,All Days
+12005,New - H. Superfast Express,NDLS-NZM,16:00,17:55,Daily,Passenger,All Days
+12006,New - H. Superfast Express,NDLS-NZM,07:15,09:10,Daily,Passenger,All Days
+12007,New - H. Container Freight,NDLS-NZM,00:30,02:25,Daily,Freight,All Days
+12008,New - H. Superfast Express,NDLS-NZM,18:30,21:25,Daily,Passenger,All Days
+12009,New - H. Superfast Express,NDLS-NZM,07:00,10:10,Daily,Passenger,All Days
+12010,New - H. Vande Bharat Express,NDLS-NZM,16:15,17:10,Daily,Passenger,All Days
+12011,Ambala - Chandigarh Container Freight,AMB-CDG,11:45,13:55,Daily,Freight,All Days
+12012,Ambala - Chandigarh Vande Bharat Express,AMB-CDG,20:15,22:10,Daily,Passenger,All Days
+12013,Ambala - Chandigarh Shatabdi Express,AMB-CDG,07:15,08:40,Daily,Passenger,All Days
+12014,Ambala - Chandigarh Superfast Express,AMB-CDG,07:30,10:55,Daily,Passenger,All Days
+12015,Ambala - Chandigarh POL Tanker Freight,AMB-CDG,03:00,04:10,Daily,Freight,All Days
+12016,Lucknow - Varanasi Vande Bharat Express,LKO-BSB,19:00,21:25,Daily,Passenger,All Days
+12017,Lucknow - Varanasi Vande Bharat Express,LKO-BSB,06:15,09:10,Daily,Passenger,All Days
+12018,Lucknow - Varanasi Rajdhani Express,LKO-BSB,19:30,22:40,Daily,Passenger,All Days
+12019,Lucknow - Varanasi Rajdhani Express,LKO-BSB,17:15,20:40,Daily,Passenger,All Days
+12020,Lucknow - Varanasi POL Tanker Freight,LKO-BSB,01:00,03:55,Daily,Freight,All Days
+12021,Ghaziabad - Kanpur Container Freight,GZB-CNB,01:30,04:10,Daily,Freight,All Days
+12022,Ghaziabad - Kanpur Superfast Express,GZB-CNB,19:30,20:55,Daily,Passenger,All Days
+12023,Ghaziabad - Kanpur Container Freight,GZB-CNB,02:30,03:40,Daily,Freight,All Days
+12024,Ghaziabad - Kanpur Vande Bharat Express,GZB-CNB,07:15,10:10,Daily,Passenger,All Days
+12025,Ghaziabad - Kanpur Vande Bharat Express,GZB-CNB,06:15,07:55,Daily,Passenger,All Days
+12026,Kanpur - Prayagraj Superfast Express,CNB-PRYJ,08:15,09:55,Daily,Passenger,All Days
+12027,Kanpur - Prayagraj Rajdhani Express,CNB-PRYJ,17:15,19:40,Daily,Passenger,All Days
+12028,Kanpur - Prayagraj Shatabdi Express,CNB-PRYJ,07:30,08:10,Daily,Passenger,All Days
+12029,Kanpur - Prayagraj Rajdhani Express,CNB-PRYJ,09:00,11:10,Daily,Passenger,All Days
+12030,Kanpur - Prayagraj Superfast Express,CNB-PRYJ,16:30,18:10,Daily,Passenger,All Days
+12031,Prayagraj - Pt. Superfast Express,PRYJ-DDU,06:30,07:40,Daily,Passenger,All Days
+12032,Prayagraj - Pt. Container Freight,PRYJ-DDU,11:15,13:40,Daily,Freight,All Days
+12033,Prayagraj - Pt. Container Freight,PRYJ-DDU,14:15,17:25,Daily,Freight,All Days
+12034,Prayagraj - Pt. Rajdhani Express,PRYJ-DDU,06:45,07:25,Daily,Passenger,All Days
+12035,Prayagraj - Pt. Container Freight,PRYJ-DDU,12:00,14:10,Daily,Freight,All Days
+12036,Prayagraj - Pt. POL Tanker Freight,PRYJ-DDU,13:30,14:25,Daily,Freight,All Days
+12037,Agra - Gwalior Rajdhani Express,AGC-GWL,18:45,19:25,Daily,Passenger,All Days
+12038,Agra - Gwalior POL Tanker Freight,AGC-GWL,11:00,12:25,Daily,Freight,All Days
+12039,Agra - Gwalior Container Freight,AGC-GWL,13:30,15:10,Daily,Freight,All Days
+12040,Agra - Gwalior Container Freight,AGC-GWL,01:15,04:55,Daily,Freight,All Days
+12041,Agra - Gwalior Vande Bharat Express,AGC-GWL,06:45,09:25,Daily,Passenger,All Days
+12042,Agra - Gwalior Rajdhani Express,AGC-GWL,16:30,18:55,Daily,Passenger,All Days
+12043,Mumbai - Kalyan POL Tanker Freight,CSMT-KYN,12:30,14:40,Daily,Freight,All Days
+12044,Mumbai - Kalyan Rajdhani Express,CSMT-KYN,07:15,08:10,Daily,Passenger,All Days
+12045,Mumbai - Kalyan Rajdhani Express,CSMT-KYN,07:15,09:55,Daily,Passenger,All Days
+12046,Mumbai - Kalyan Shatabdi Express,CSMT-KYN,18:00,21:40,Daily,Passenger,All Days
+12047,Mumbai - Kalyan Rajdhani Express,CSMT-KYN,19:30,21:40,Daily,Passenger,All Days
+12048,Mumbai - Kalyan Vande Bharat Express,CSMT-KYN,07:15,10:40,Daily,Passenger,All Days
+12049,Kalyan - Pune POL Tanker Freight,KYN-PUNE,23:00,00:40,Daily,Freight,All Days
+12050,Kalyan - Pune Rajdhani Express,KYN-PUNE,07:15,09:55,Daily,Passenger,All Days
+12051,Kalyan - Pune Container Freight,KYN-PUNE,00:30,02:25,Daily,Freight,All Days
+12052,Kalyan - Pune Vande Bharat Express,KYN-PUNE,18:45,21:25,Daily,Passenger,All Days
+12053,Kalyan - Pune Vande Bharat Express,KYN-PUNE,19:00,20:10,Daily,Passenger,All Days
+12054,Kalyan - Pune Vande Bharat Express,KYN-PUNE,06:15,07:25,Daily,Passenger,All Days
+12055,Kalyan - Bhusawal Shatabdi Express,KYN-BSL,07:30,08:10,Daily,Passenger,All Days
+12056,Kalyan - Bhusawal Vande Bharat Express,KYN-BSL,09:45,10:10,Daily,Passenger,All Days
+12057,Kalyan - Bhusawal Shatabdi Express,KYN-BSL,07:00,09:10,Daily,Passenger,All Days
+12058,Kalyan - Bhusawal Rajdhani Express,KYN-BSL,18:45,20:10,Daily,Passenger,All Days
+12059,Kalyan - Bhusawal Superfast Express,KYN-BSL,18:15,20:25,Daily,Passenger,All Days
+12060,Nagpur - Wardha Shatabdi Express,NGP-WR,16:45,17:10,Daily,Passenger,All Days
+12061,Nagpur - Wardha Container Freight,NGP-WR,23:15,02:40,Daily,Freight,All Days
+12062,Nagpur - Wardha Superfast Express,NGP-WR,18:45,19:10,Daily,Passenger,All Days
+12063,Nagpur - Wardha Shatabdi Express,NGP-WR,18:15,20:25,Daily,Passenger,All Days
+12064,Mumbai - Borivali Container Freight,MMCT-BVI,03:00,05:40,Daily,Freight,All Days
+12065,Mumbai - Borivali Superfast Express,MMCT-BVI,20:45,22:40,Daily,Passenger,All Days
+12066,Mumbai - Borivali Superfast Express,MMCT-BVI,16:15,17:40,Daily,Passenger,All Days
+12067,Mumbai - Borivali Container Freight,MMCT-BVI,03:00,05:10,Daily,Freight,All Days
+12068,Mumbai - Borivali Superfast Express,MMCT-BVI,20:30,23:25,Daily,Passenger,All Days
+12069,Mumbai - Borivali Rajdhani Express,MMCT-BVI,07:15,10:25,Daily,Passenger,All Days
+12070,Borivali - Surat Container Freight,BVI-ST,00:15,03:55,Daily,Freight,All Days
+12071,Borivali - Surat Shatabdi Express,BVI-ST,08:15,09:40,Daily,Passenger,All Days
+12072,Borivali - Surat POL Tanker Freight,BVI-ST,12:00,15:40,Daily,Freight,All Days
+12073,Borivali - Surat Container Freight,BVI-ST,23:15,02:25,Daily,Freight,All Days
+12074,Borivali - Surat Superfast Express,BVI-ST,20:30,21:55,Daily,Passenger,All Days
+12075,Surat - Vadodara Vande Bharat Express,ST-BRC,06:15,09:25,Daily,Passenger,All Days
+12076,Surat - Vadodara Vande Bharat Express,ST-BRC,20:45,21:40,Daily,Passenger,All Days
+12077,Surat - Vadodara Container Freight,ST-BRC,03:15,05:25,Daily,Freight,All Days
+12078,Surat - Vadodara Shatabdi Express,ST-BRC,06:00,07:25,Daily,Passenger,All Days
+12079,Vadodara - Ahmedabad Container Freight,BRC-ADI,12:00,14:55,Daily,Freight,All Days
+12080,Vadodara - Ahmedabad Container Freight,BRC-ADI,01:30,03:40,Daily,Freight,All Days
+12081,Vadodara - Ahmedabad Rajdhani Express,BRC-ADI,08:45,11:55,Daily,Passenger,All Days
+12082,Vadodara - Ahmedabad POL Tanker Freight,BRC-ADI,12:15,15:40,Daily,Freight,All Days
+12083,Howrah - Barddhaman POL Tanker Freight,HWH-BWN,23:15,01:40,Daily,Freight,All Days
+12084,Howrah - Barddhaman POL Tanker Freight,HWH-BWN,11:15,12:10,Daily,Freight,All Days
+12085,Howrah - Barddhaman POL Tanker Freight,HWH-BWN,23:45,02:10,Daily,Freight,All Days
+12086,Howrah - Barddhaman Rajdhani Express,HWH-BWN,17:15,20:10,Daily,Passenger,All Days
+12087,Barddhaman - Asansol Rajdhani Express,BWN-ASN,17:00,18:40,Daily,Passenger,All Days
+12088,Barddhaman - Asansol Shatabdi Express,BWN-ASN,08:00,11:40,Daily,Passenger,All Days
+12089,Barddhaman - Asansol Superfast Express,BWN-ASN,06:30,07:25,Daily,Passenger,All Days
+12090,Barddhaman - Asansol POL Tanker Freight,BWN-ASN,01:30,03:10,Daily,Freight,All Days
+12091,Barddhaman - Asansol POL Tanker Freight,BWN-ASN,00:00,02:55,Daily,Freight,All Days
+12092,Sealdah - Ranaghat Superfast Express,SDAH-RHA,08:45,10:55,Daily,Passenger,All Days
+12093,Sealdah - Ranaghat Shatabdi Express,SDAH-RHA,20:45,21:55,Daily,Passenger,All Days
+12094,Sealdah - Ranaghat Container Freight,SDAH-RHA,03:15,05:10,Daily,Freight,All Days
+12095,Sealdah - Ranaghat Vande Bharat Express,SDAH-RHA,16:00,18:40,Daily,Passenger,All Days
+12096,Sealdah - Ranaghat Vande Bharat Express,SDAH-RHA,07:30,08:55,Daily,Passenger,All Days
+12097,Sealdah - Ranaghat Rajdhani Express,SDAH-RHA,07:00,09:55,Daily,Passenger,All Days
+12098,Pt. - Patna Vande Bharat Express,DDU-PNBE,18:15,21:55,Daily,Passenger,All Days
+12099,Pt. - Patna Rajdhani Express,DDU-PNBE,06:00,08:25,Daily,Passenger,All Days
+12100,Pt. - Patna Rajdhani Express,DDU-PNBE,18:30,21:40,Daily,Passenger,All Days
+12101,Pt. - Patna Shatabdi Express,DDU-PNBE,09:00,10:55,Daily,Passenger,All Days
+12102,Pt. - Patna Container Freight,DDU-PNBE,22:45,23:10,Daily,Freight,All Days
+12103,Pt. - Patna Shatabdi Express,DDU-PNBE,06:45,07:40,Daily,Passenger,All Days
+12104,Patna - Mokama POL Tanker Freight,PNBE-MKA,23:45,00:10,Daily,Freight,All Days
+12105,Patna - Mokama Vande Bharat Express,PNBE-MKA,09:15,12:40,Daily,Passenger,All Days
+12106,Patna - Mokama Vande Bharat Express,PNBE-MKA,19:00,21:55,Daily,Passenger,All Days
+12107,Patna - Mokama Superfast Express,PNBE-MKA,19:30,20:55,Daily,Passenger,All Days
+12108,Patna - Mokama Rajdhani Express,PNBE-MKA,17:45,19:25,Daily,Passenger,All Days
+12109,Patna - Mokama Superfast Express,PNBE-MKA,06:30,08:55,Daily,Passenger,All Days
+12110,Dhanbad - Netaji Rajdhani Express,DHN-GMO,16:00,17:10,Daily,Passenger,All Days
+12111,Dhanbad - Netaji Vande Bharat Express,DHN-GMO,17:45,20:25,Daily,Passenger,All Days
+12112,Dhanbad - Netaji Container Freight,DHN-GMO,00:45,03:55,Daily,Freight,All Days
+12113,Dhanbad - Netaji Container Freight,DHN-GMO,14:15,16:40,Daily,Freight,All Days
+12114,Dhanbad - Netaji Vande Bharat Express,DHN-GMO,18:00,21:25,Daily,Passenger,All Days
+12115,Bhubaneswar - Cuttack Superfast Express,BBS-CTC,08:15,09:25,Daily,Passenger,All Days
+12116,Bhubaneswar - Cuttack Rajdhani Express,BBS-CTC,06:45,07:55,Daily,Passenger,All Days
+12117,Bhubaneswar - Cuttack Rajdhani Express,BBS-CTC,08:30,10:10,Daily,Passenger,All Days
+12118,Bhubaneswar - Cuttack Vande Bharat Express,BBS-CTC,18:45,21:40,Daily,Passenger,All Days
+12119,Cuttack - Puri Container Freight,CTC-PURI,14:00,17:55,Daily,Freight,All Days
+12120,Cuttack - Puri Vande Bharat Express,CTC-PURI,18:15,19:10,Daily,Passenger,All Days
+12121,Cuttack - Puri Vande Bharat Express,CTC-PURI,07:30,10:40,Daily,Passenger,All Days
+12122,Cuttack - Puri Superfast Express,CTC-PURI,16:45,19:55,Daily,Passenger,All Days
+12123,Cuttack - Puri Container Freight,CTC-PURI,23:45,00:25,Daily,Freight,All Days
+12124,Khurda - Vizianagaram Superfast Express,KUR-VZM,08:45,09:55,Daily,Passenger,All Days
+12125,Khurda - Vizianagaram Shatabdi Express,KUR-VZM,09:00,12:55,Daily,Passenger,All Days
+12126,Khurda - Vizianagaram Shatabdi Express,KUR-VZM,17:00,19:40,Daily,Passenger,All Days
+12127,Khurda - Vizianagaram Shatabdi Express,KUR-VZM,16:45,19:10,Daily,Passenger,All Days
+12128,Khurda - Vizianagaram Rajdhani Express,KUR-VZM,08:30,11:55,Daily,Passenger,All Days
+12129,Howrah - Kharagpur Shatabdi Express,HWH-KGP,18:00,19:55,Daily,Passenger,All Days
+12130,Howrah - Kharagpur Rajdhani Express,HWH-KGP,18:45,21:40,Daily,Passenger,All Days
+12131,Howrah - Kharagpur Vande Bharat Express,HWH-KGP,20:15,21:40,Daily,Passenger,All Days
+12132,Howrah - Kharagpur POL Tanker Freight,HWH-KGP,22:45,23:10,Daily,Freight,All Days
+12133,Howrah - Kharagpur Rajdhani Express,HWH-KGP,09:15,10:25,Daily,Passenger,All Days
+12134,Kharagpur - Tatanagar Superfast Express,KGP-TATA,06:30,09:25,Daily,Passenger,All Days
+12135,Kharagpur - Tatanagar Shatabdi Express,KGP-TATA,17:45,20:55,Daily,Passenger,All Days
+12136,Kharagpur - Tatanagar POL Tanker Freight,KGP-TATA,01:00,02:40,Daily,Freight,All Days
+12137,Kharagpur - Tatanagar Superfast Express,KGP-TATA,19:15,21:40,Daily,Passenger,All Days
+12138,Tatanagar - Rourkela Rajdhani Express,TATA-ROU,16:00,18:10,Daily,Passenger,All Days
+12139,Tatanagar - Rourkela Superfast Express,TATA-ROU,06:15,09:25,Daily,Passenger,All Days
+12140,Tatanagar - Rourkela Rajdhani Express,TATA-ROU,09:15,11:55,Daily,Passenger,All Days
+12141,Tatanagar - Rourkela Container Freight,TATA-ROU,00:00,02:25,Daily,Freight,All Days
+12142,Tatanagar - Rourkela POL Tanker Freight,TATA-ROU,02:00,03:40,Daily,Freight,All Days
+12143,Bilaspur - Raipur Shatabdi Express,BSP-R,16:45,18:40,Daily,Passenger,All Days
+12144,Bilaspur - Raipur Superfast Express,BSP-R,16:15,18:40,Daily,Passenger,All Days
+12145,Bilaspur - Raipur POL Tanker Freight,BSP-R,22:45,01:10,Daily,Freight,All Days
+12146,Bilaspur - Raipur Vande Bharat Express,BSP-R,20:30,23:40,Daily,Passenger,All Days
+12147,Bilaspur - Raipur Shatabdi Express,BSP-R,07:45,08:40,Daily,Passenger,All Days
+12148,Bilaspur - Raipur Shatabdi Express,BSP-R,17:30,19:40,Daily,Passenger,All Days
+12149,Raipur - Durg Rajdhani Express,R-DURG,20:15,21:55,Daily,Passenger,All Days
+12150,Raipur - Durg POL Tanker Freight,R-DURG,12:15,15:10,Daily,Freight,All Days
+12151,Raipur - Durg POL Tanker Freight,R-DURG,14:30,16:55,Daily,Freight,All Days
+12152,Raipur - Durg Superfast Express,R-DURG,18:00,21:25,Daily,Passenger,All Days
+12153,Durg - Gondia POL Tanker Freight,DURG-G,03:45,06:40,Daily,Freight,All Days
+12154,Durg - Gondia Container Freight,DURG-G,11:15,14:25,Daily,Freight,All Days
+12155,Durg - Gondia Shatabdi Express,DURG-G,07:45,08:40,Daily,Passenger,All Days
+12156,Durg - Gondia POL Tanker Freight,DURG-G,22:15,01:40,Daily,Freight,All Days
+12157,Durg - Gondia POL Tanker Freight,DURG-G,01:15,03:25,Daily,Freight,All Days
+12158,MGR - Arakkonam Shatabdi Express,MAS-AJJ,18:30,20:40,Daily,Passenger,All Days
+12159,MGR - Arakkonam Container Freight,MAS-AJJ,11:45,12:55,Daily,Freight,All Days
+12160,MGR - Arakkonam Vande Bharat Express,MAS-AJJ,07:45,08:10,Daily,Passenger,All Days
+12161,MGR - Arakkonam POL Tanker Freight,MAS-AJJ,13:30,15:10,Daily,Freight,All Days
+12162,MGR - Arakkonam Rajdhani Express,MAS-AJJ,08:15,10:55,Daily,Passenger,All Days
+12163,MGR - Arakkonam Container Freight,MAS-AJJ,14:15,16:25,Daily,Freight,All Days
+12164,Arakkonam - Katpadi Superfast Express,AJJ-KPD,17:15,19:10,Daily,Passenger,All Days
+12165,Arakkonam - Katpadi Vande Bharat Express,AJJ-KPD,19:30,20:25,Daily,Passenger,All Days
+12166,Arakkonam - Katpadi Container Freight,AJJ-KPD,02:45,03:25,Daily,Freight,All Days
+12167,Arakkonam - Katpadi Container Freight,AJJ-KPD,13:45,15:55,Daily,Freight,All Days
+12168,Erode - Coimbatore Superfast Express,ED-CBE,06:00,09:25,Daily,Passenger,All Days
+12169,Erode - Coimbatore POL Tanker Freight,ED-CBE,12:00,14:25,Daily,Freight,All Days
+12170,Erode - Coimbatore Vande Bharat Express,ED-CBE,06:15,07:40,Daily,Passenger,All Days
+12171,Erode - Coimbatore Shatabdi Express,ED-CBE,08:00,10:40,Daily,Passenger,All Days
+12172,Erode - Coimbatore Rajdhani Express,ED-CBE,07:00,09:40,Daily,Passenger,All Days
+12173,Thiruvananthapuram - Kollam POL Tanker Freight,TVC-QLN,22:30,00:25,Daily,Freight,All Days
+12174,Thiruvananthapuram - Kollam Shatabdi Express,TVC-QLN,19:30,20:25,Daily,Passenger,All Days
+12175,Thiruvananthapuram - Kollam Superfast Express,TVC-QLN,06:15,07:25,Daily,Passenger,All Days
+12176,Thiruvananthapuram - Kollam Rajdhani Express,TVC-QLN,06:15,07:40,Daily,Passenger,All Days
+12177,Thiruvananthapuram - Kollam POL Tanker Freight,TVC-QLN,00:45,03:40,Daily,Freight,All Days
+12178,Secunderabad - Kazipet Container Freight,SC-KZJ,00:00,03:10,Daily,Freight,All Days
+12179,Secunderabad - Kazipet POL Tanker Freight,SC-KZJ,00:00,03:10,Daily,Freight,All Days
+12180,Secunderabad - Kazipet Superfast Express,SC-KZJ,19:45,20:40,Daily,Passenger,All Days
+12181,Secunderabad - Kazipet Superfast Express,SC-KZJ,08:15,11:10,Daily,Passenger,All Days
+12182,Secunderabad - Kazipet Shatabdi Express,SC-KZJ,18:00,21:40,Daily,Passenger,All Days
+12183,Secunderabad - Kazipet Container Freight,SC-KZJ,23:15,01:10,Daily,Freight,All Days
+12184,Kazipet - Vijayawada POL Tanker Freight,KZJ-BZA,23:00,01:10,Daily,Freight,All Days
+12185,Kazipet - Vijayawada Vande Bharat Express,KZJ-BZA,19:15,22:25,Daily,Passenger,All Days
+12186,Kazipet - Vijayawada Shatabdi Express,KZJ-BZA,20:15,22:55,Daily,Passenger,All Days
+12187,Kazipet - Vijayawada Shatabdi Express,KZJ-BZA,08:00,11:55,Daily,Passenger,All Days
+12188,Kazipet - Vijayawada Rajdhani Express,KZJ-BZA,19:30,20:10,Daily,Passenger,All Days
+12189,Kazipet - Vijayawada Vande Bharat Express,KZJ-BZA,07:00,10:55,Daily,Passenger,All Days
+12190,Vijayawada - Gudur Vande Bharat Express,BZA-GDR,20:00,23:10,Daily,Passenger,All Days
+12191,Vijayawada - Gudur Shatabdi Express,BZA-GDR,09:45,11:40,Daily,Passenger,All Days
+12192,Vijayawada - Gudur Superfast Express,BZA-GDR,06:00,07:10,Daily,Passenger,All Days
+12193,Vijayawada - Gudur Shatabdi Express,BZA-GDR,17:30,19:10,Daily,Passenger,All Days
+12194,KSR - Mysuru Vande Bharat Express,SBC-MYS,06:15,09:25,Daily,Passenger,All Days
+12195,KSR - Mysuru Shatabdi Express,SBC-MYS,17:45,20:40,Daily,Passenger,All Days
+12196,KSR - Mysuru POL Tanker Freight,SBC-MYS,01:30,03:25,Daily,Freight,All Days
+12197,KSR - Mysuru Vande Bharat Express,SBC-MYS,18:45,20:40,Daily,Passenger,All Days
+12198,KSR - Yesvantpur POL Tanker Freight,SBC-YPR,14:45,17:25,Daily,Freight,All Days
+12199,KSR - Yesvantpur Vande Bharat Express,SBC-YPR,08:00,09:10,Daily,Passenger,All Days
+12200,KSR - Yesvantpur Superfast Express,SBC-YPR,19:45,20:55,Daily,Passenger,All Days
+12201,KSR - Yesvantpur Shatabdi Express,SBC-YPR,06:15,08:55,Daily,Passenger,All Days
+12202,KSR - Yesvantpur Vande Bharat Express,SBC-YPR,18:45,19:10,Daily,Passenger,All Days
+12203,SSS - Belagavi POL Tanker Freight,UBL-BGM,12:00,15:25,Daily,Freight,All Days
+12204,SSS - Belagavi POL Tanker Freight,UBL-BGM,12:00,14:25,Daily,Freight,All Days
+12205,SSS - Belagavi Superfast Express,UBL-BGM,17:45,18:10,Daily,Passenger,All Days
+12206,SSS - Belagavi Vande Bharat Express,UBL-BGM,08:45,10:25,Daily,Passenger,All Days
+12207,SSS - Belagavi Vande Bharat Express,UBL-BGM,19:30,20:40,Daily,Passenger,All Days
+12208,Jaipur - Ajmer Vande Bharat Express,JP-AII,20:15,23:55,Daily,Passenger,All Days
+12209,Jaipur - Ajmer Superfast Express,JP-AII,09:00,11:55,Daily,Passenger,All Days
+12210,Jaipur - Ajmer Container Freight,JP-AII,14:00,16:55,Daily,Freight,All Days
+12211,Jaipur - Ajmer Shatabdi Express,JP-AII,07:45,10:10,Daily,Passenger,All Days
+12212,Jaipur - Ajmer Vande Bharat Express,JP-AII,18:45,19:10,Daily,Passenger,All Days
+12213,Ajmer - Abu Container Freight,AII-ABR,23:30,02:25,Daily,Freight,All Days
+12214,Ajmer - Abu POL Tanker Freight,AII-ABR,14:30,16:10,Daily,Freight,All Days
+12215,Ajmer - Abu Rajdhani Express,AII-ABR,19:30,22:55,Daily,Passenger,All Days
+12216,Ajmer - Abu POL Tanker Freight,AII-ABR,12:45,13:10,Daily,Freight,All Days
+12217,Rewari - Jaipur Rajdhani Express,RE-JP,06:30,08:40,Daily,Passenger,All Days
+12218,Rewari - Jaipur Container Freight,RE-JP,22:30,01:10,Daily,Freight,All Days
+12219,Rewari - Jaipur Vande Bharat Express,RE-JP,08:45,09:55,Daily,Passenger,All Days
+12220,Rewari - Jaipur Vande Bharat Express,RE-JP,16:15,17:10,Daily,Passenger,All Days
+12221,Rewari - Jaipur Superfast Express,RE-JP,09:45,10:40,Daily,Passenger,All Days
+12222,Rewari - Jaipur Vande Bharat Express,RE-JP,18:00,21:10,Daily,Passenger,All Days
+12223,Gorakhpur - Basti Superfast Express,GKP-BST,20:15,22:10,Daily,Passenger,All Days
+12224,Gorakhpur - Basti Container Freight,GKP-BST,00:45,03:55,Daily,Freight,All Days
+12225,Gorakhpur - Basti Container Freight,GKP-BST,02:15,05:25,Daily,Freight,All Days
+12226,Gorakhpur - Basti Vande Bharat Express,GKP-BST,18:30,21:55,Daily,Passenger,All Days
+12227,Gorakhpur - Basti Superfast Express,GKP-BST,09:30,11:40,Daily,Passenger,All Days
+12228,Gorakhpur - Chhapra Superfast Express,GKP-CPR,08:15,10:40,Daily,Passenger,All Days
+12229,Gorakhpur - Chhapra POL Tanker Freight,GKP-CPR,22:30,01:25,Daily,Freight,All Days
+12230,Gorakhpur - Chhapra Rajdhani Express,GKP-CPR,09:30,12:40,Daily,Passenger,All Days
+12231,Gorakhpur - Chhapra POL Tanker Freight,GKP-CPR,02:15,05:40,Daily,Freight,All Days
+12232,Gorakhpur - Chhapra POL Tanker Freight,GKP-CPR,01:30,04:55,Daily,Freight,All Days
+12233,Lucknow - Gonda Container Freight,LJN-GD,13:30,15:10,Daily,Freight,All Days
+12234,Lucknow - Gonda Container Freight,LJN-GD,01:00,03:25,Daily,Freight,All Days
+12235,Lucknow - Gonda Vande Bharat Express,LJN-GD,06:15,08:25,Daily,Passenger,All Days
+12236,Lucknow - Gonda Shatabdi Express,LJN-GD,16:15,17:40,Daily,Passenger,All Days
+12237,Lucknow - Gonda Rajdhani Express,LJN-GD,20:00,22:55,Daily,Passenger,All Days
+12238,Lucknow - Gonda Vande Bharat Express,LJN-GD,20:15,23:55,Daily,Passenger,All Days
+12239,Guwahati - New Container Freight,GHY-NBQ,11:00,13:55,Daily,Freight,All Days
+12240,Guwahati - New Superfast Express,GHY-NBQ,17:00,18:40,Daily,Passenger,All Days
+12241,Guwahati - New Rajdhani Express,GHY-NBQ,19:15,22:40,Daily,Passenger,All Days
+12242,Guwahati - New Container Freight,GHY-NBQ,22:15,01:25,Daily,Freight,All Days
+12243,Katihar - New Superfast Express,KIR-NJP,08:00,09:25,Daily,Passenger,All Days
+12244,Katihar - New POL Tanker Freight,KIR-NJP,22:00,00:10,Daily,Freight,All Days
+12245,Katihar - New Superfast Express,KIR-NJP,16:30,17:25,Daily,Passenger,All Days
+12246,Katihar - New Container Freight,KIR-NJP,11:00,13:55,Daily,Freight,All Days
+12247,Katihar - New POL Tanker Freight,KIR-NJP,02:00,03:40,Daily,Freight,All Days
+12248,Lumding - Dibrugarh Vande Bharat Express,LMG-DBRG,16:45,19:40,Daily,Passenger,All Days
+12249,Lumding - Dibrugarh Vande Bharat Express,LMG-DBRG,17:15,18:10,Daily,Passenger,All Days
+12250,Lumding - Dibrugarh Container Freight,LMG-DBRG,02:45,05:55,Daily,Freight,All Days
+12251,Lumding - Dibrugarh Vande Bharat Express,LMG-DBRG,17:15,18:40,Daily,Passenger,All Days
+12252,Lumding - Dibrugarh Shatabdi Express,LMG-DBRG,17:30,18:55,Daily,Passenger,All Days
+12253,Lumding - Dibrugarh Container Freight,LMG-DBRG,00:00,03:40,Daily,Freight,All Days
+12254,Bhopal - Itarsi Rajdhani Express,BPL-ET,09:00,12:40,Daily,Passenger,All Days
+12255,Bhopal - Itarsi Superfast Express,BPL-ET,07:45,09:40,Daily,Passenger,All Days
+12256,Bhopal - Itarsi Vande Bharat Express,BPL-ET,20:30,23:55,Daily,Passenger,All Days
+12257,Bhopal - Itarsi Superfast Express,BPL-ET,06:30,09:25,Daily,Passenger,All Days
+12258,Bhopal - Itarsi Shatabdi Express,BPL-ET,20:00,21:25,Daily,Passenger,All Days
+12259,Itarsi - Jabalpur Container Freight,ET-JBP,00:00,01:25,Daily,Freight,All Days
+12260,Itarsi - Jabalpur POL Tanker Freight,ET-JBP,13:00,14:55,Daily,Freight,All Days
+12261,Itarsi - Jabalpur POL Tanker Freight,ET-JBP,01:15,02:55,Daily,Freight,All Days
+12262,Itarsi - Jabalpur POL Tanker Freight,ET-JBP,12:00,13:10,Daily,Freight,All Days
+12263,Itarsi - Jabalpur Vande Bharat Express,ET-JBP,08:30,11:10,Daily,Passenger,All Days
+12264,Itarsi - Jabalpur Container Freight,ET-JBP,03:30,05:55,Daily,Freight,All Days
+12265,Kota - Sawai POL Tanker Freight,KOTA-SWM,13:45,15:10,Daily,Freight,All Days
+12266,Kota - Sawai Superfast Express,KOTA-SWM,07:00,10:10,Daily,Passenger,All Days
+12267,Kota - Sawai POL Tanker Freight,KOTA-SWM,23:00,02:10,Daily,Freight,All Days
+12268,Kota - Sawai Shatabdi Express,KOTA-SWM,20:00,22:40,Daily,Passenger,All Days
+12269,Kota - Sawai Container Freight,KOTA-SWM,01:30,03:55,Daily,Freight,All Days
+12270,Roha - Ratnagiri POL Tanker Freight,ROHA-RN,00:45,01:25,Daily,Freight,All Days
+12271,Roha - Ratnagiri Rajdhani Express,ROHA-RN,18:30,21:25,Daily,Passenger,All Days
+12272,Roha - Ratnagiri Shatabdi Express,ROHA-RN,17:00,20:25,Daily,Passenger,All Days
+12273,Roha - Ratnagiri Vande Bharat Express,ROHA-RN,06:00,09:55,Daily,Passenger,All Days
+12274,Roha - Ratnagiri Container Freight,ROHA-RN,22:00,00:25,Daily,Freight,All Days
+12275,Ratnagiri - Madgaon POL Tanker Freight,RN-MAO,12:15,14:25,Daily,Freight,All Days
+12276,Ratnagiri - Madgaon Rajdhani Express,RN-MAO,08:15,11:40,Daily,Passenger,All Days
+12277,Ratnagiri - Madgaon Rajdhani Express,RN-MAO,07:15,10:10,Daily,Passenger,All Days
+12278,Ratnagiri - Madgaon Container Freight,RN-MAO,14:00,16:10,Daily,Freight,All Days
+12279,Ratnagiri - Madgaon Shatabdi Express,RN-MAO,07:15,10:55,Daily,Passenger,All Days
+12280,Ratnagiri - Madgaon Shatabdi Express,RN-MAO,17:15,20:25,Daily,Passenger,All Days
+12281,Madgaon - Karwar Shatabdi Express,MAO-KAWR,07:15,09:55,Daily,Passenger,All Days
+12282,Madgaon - Karwar Superfast Express,MAO-KAWR,17:30,20:25,Daily,Passenger,All Days
+12283,Madgaon - Karwar Container Freight,MAO-KAWR,23:30,01:55,Daily,Freight,All Days
+12284,Madgaon - Karwar Rajdhani Express,MAO-KAWR,06:30,07:25,Daily,Passenger,All Days
+12285,Dum - Dakshineswar POL Tanker Freight,DUM-DAK,13:30,15:25,Daily,Freight,All Days
+12286,Dum - Dakshineswar POL Tanker Freight,DUM-DAK,12:45,14:55,Daily,Freight,All Days
+12287,Dum - Dakshineswar Shatabdi Express,DUM-DAK,16:45,19:10,Daily,Passenger,All Days
+12288,Dum - Dakshineswar Rajdhani Express,DUM-DAK,07:30,08:25,Daily,Passenger,All Days
+12289,Dum - Dakshineswar Shatabdi Express,DUM-DAK,07:00,08:10,Daily,Passenger,All Days
+12290,Dum - Dakshineswar Container Freight,DUM-DAK,23:45,02:25,Daily,Freight,All Days
+12291,Howrah - Esplanade Container Freight,HOW-ESPL,11:45,14:25,Daily,Freight,All Days
+12292,Howrah - Esplanade Shatabdi Express,HOW-ESPL,18:15,21:40,Daily,Passenger,All Days
+12293,Howrah - Esplanade Rajdhani Express,HOW-ESPL,19:00,21:40,Daily,Passenger,All Days
+12294,Howrah - Esplanade Container Freight,HOW-ESPL,00:15,03:25,Daily,Freight,All Days

@@ -1,15 +1,16 @@
 {
-  "name": "sih-block-planning-system",
-  "version": "1.0.0",
-  "description": "AI-Powered Automatic Block Planning System for Indian Railways",
+  "name": "railopt-ai-v2",
+  "version": "2.0.0",
+  "description": "AI-Powered Automatic Block Planning for Indian Railways — PS-26027 SIH 2026",
   "private": true,
   "scripts": {
-    "install:all": "cd server && npm install && cd ../client && npm install",
-    "dev:server": "cd server && npm run dev",
+    "install:client": "cd client && npm install",
+    "dev:api": "cd backend && python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000",
     "dev:client": "cd client && npm run dev",
-    "dev:ai": "cd ai-engine && uvicorn main:app --reload --port 8000",
-    "seed": "cd server && npm run seed",
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\""
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:client\"",
+    "train:ml": "cd backend && python -m backend.ai.scoring.trainer --samples 5000",
+    "seed:db": "curl -X POST http://localhost:8000/api/ingest/seed -H 'Authorization: Bearer YOUR_TOKEN'",
+    "build:client": "cd client && npm run build"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

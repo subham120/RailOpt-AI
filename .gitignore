@@ -1,42 +1,158 @@
-# Node dependencies
+# ==============================================================================
+# RailOpt AI - Deployment & Production .gitignore
+# Excludes local environments, caches, build artifacts, test runners,
+# dev tooling, and ephemeral files from production deployment.
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Environment Variables, Secrets & Credentials
+# ------------------------------------------------------------------------------
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.staging
+.env.production.local
+*.pem
+*.key
+*.cert
+*.crt
+# Keep configuration template
+!.env.example
+
+# ------------------------------------------------------------------------------
+# 2. Node & JavaScript / Frontend Dependencies & Logs
+# ------------------------------------------------------------------------------
 node_modules/
 */node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-store/
+.yarn/
+.npm/
 
-# Environment & Secrets
-.env
-.env.local
-.env.*.local
-
-# Build outputs
+# ------------------------------------------------------------------------------
+# 3. Frontend Build Outputs & Cache
+# ------------------------------------------------------------------------------
 dist/
 build/
 client/dist/
+client/build/
+.vite/
+client/.vite/
+*.tsbuildinfo
 
-# Python & AI Engine
+# ------------------------------------------------------------------------------
+# 4. Python Runtime, Bytecode, Virtual Environments & Packaging
+# ------------------------------------------------------------------------------
 __pycache__/
-*/__pycache__/
-*/*/__pycache__/
-*.pyc
-*.pyo
+**/__pycache__/
+*.py[cod]
+*$py.class
 *.pyd
+*.pyo
 *.pkl
+
+# Virtual Environments
 .venv/
 venv/
 env/
-.pytest_cache/
+ENV/
+env.bak/
+venv.bak/
 
-# IDE & OS
+# Python packaging & distribution
+build/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ------------------------------------------------------------------------------
+# 5. Testing, Linting & Coverage
+# ------------------------------------------------------------------------------
+.pytest_cache/
+**/.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+test-results/
+playwright-report/
+.playwright/
+
+# ------------------------------------------------------------------------------
+# 6. Databases, Dumps & Local State
+# ------------------------------------------------------------------------------
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.dump
+*.dump.gz
+*.sql.gz
+*.rdb
+
+# ------------------------------------------------------------------------------
+# 7. AI Tooling, Development Graphs & Planning Artifacts (Dev/Local Only)
+# ------------------------------------------------------------------------------
+.gemini/
+.planning/
+graphify-out/
+scratch/
+.tmp/
+tmp/
+temp/
+
+# ------------------------------------------------------------------------------
+# 8. Operating System & IDE Files
+# ------------------------------------------------------------------------------
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+desktop.ini
+[Dd]esktop.ini
+
+# IDEs & Text Editors
 .vscode/
 .idea/
-.gemini/
+*.sublime-project
+*.sublime-workspace
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.swo
+*.swn
+*.bak
+*~
+
+# ------------------------------------------------------------------------------
+# 9. Logs & Runtime Artifacts
+# ------------------------------------------------------------------------------
 *.log
+logs/
+*.pid
+*.seed

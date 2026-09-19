@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { taskAPI, scheduleAPI, corridorAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { DEPARTMENTS, CRITICALITY_CONFIG, STATUS_CONFIG, formatDuration } from '../utils/constants';
@@ -10,17 +11,31 @@ import {
   FiCheckCircle,
   FiAlertTriangle,
   FiClipboard,
+  FiSearch,
+  FiExternalLink,
 } from 'react-icons/fi';
 
 export default function Requests() {
-  const { user, canApprove } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const targetSearch = searchParams.get('search') || searchParams.get('taskId') || '';
+  const prefillSection = searchParams.get('section') || searchParams.get('corridor') || '';
+  const prefillDept = searchParams.get('department') || '';
+
+  const { user, canApprove, activeZone } = useAuth();
   const [schedules, setSchedules] = useState([]);
   const [corridors, setCorridors] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(searchParams.get('new') === 'true');
+  const [searchTerm, setSearchTerm] = useState(targetSearch);
   const [toast, setToast] = useState(null);
   const [form, setForm] = useState({
-    sectionId: '', department: user?.department || '', defectType: '', estimatedDuration: 60, criticality: 'medium', description: ''
+    sectionId: prefillSection,
+    department: prefillDept || user?.department || '',
+    defectType: '',
+    estimatedDuration: 60,
+    criticality: 'medium',
+    description: '',
   });
 
   const showToast = (msg, type = 'success') => {
@@ -31,17 +46,23 @@ export default function Requests() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const schedParams = { status: 'proposed', limit: 100 };
+        const corrParams = {};
+        if (activeZone && activeZone !== 'ALL') {
+          schedParams.zone = activeZone;
+          corrParams.zone = activeZone;
+        }
         const [schedRes, corrRes] = await Promise.all([
-          scheduleAPI.getAll({ status: 'proposed', limit: 50 }),
-          corridorAPI.getAll(),
+          scheduleAPI.getAll(schedParams),
+          corridorAPI.getAll(corrParams),
         ]);
-        setSchedules(schedRes.data.data);
-        setCorridors(corrRes.data.data);
+        setSchedules(schedRes.data.data || []);
+        setCorridors(corrRes.data.data || []);
       } catch (err) { console.error(err); }
       finally { setLoading(false); }
     };
     fetchData();
-  }, []);
+  }, [activeZone]);
 
   const handleSubmitRequest = async (e) => {
     e.preventDefault();
@@ -199,9 +220,62 @@ export default function Requests() {
 
       {/* Proposed Schedules for Approval */}
       <div className="card" style={{ padding: '24px' }}>
-        <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#1F2937', marginBottom: '16px' }}>
-          Pending Proposed Block Schedules ({schedules.length})
-        </h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#1F2937', margin: 0 }}>
+              Pending Proposed Block Schedules ({schedules.length})
+            </h3>
+            <p style={{ fontSize: '12px', color: '#6B7280', margin: '2px 0 0' }}>
+              Divisional review queue with train interlock scoring
+            </p>
+          </div>
+
+          {/* Quick Search */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ position: 'relative', width: '240px' }}>
+              <FiSearch style={{ position: 'absolute', left: '10px', top: '10px', color: '#9CA3AF' }} />
+              <input
+                type="text"
+                className="input"
+                placeholder="Search schedule ID or section..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                style={{ paddingLeft: '32px', fontSize: '12px', width: '100%' }}
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => {
+                    setSearchTerm('');
+                    setSearchParams({});
+                  }}
+                  style={{ position: 'absolute', right: '8px', top: '8px', background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer' }}
+                >
+                  <FiX />
+                </button>
+              )}
+            </div>
+
+            {targetSearch && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                background: '#EFF6FF', border: '1px solid #93C5FD',
+                padding: '3px 10px', borderRadius: '16px', fontSize: '12px', fontWeight: '700', color: '#1D4ED8',
+              }}>
+                <span>Filtered: {targetSearch}</span>
+                <button
+                  onClick={() => {
+                    setSearchParams({});
+                    setSearchTerm('');
+                  }}
+                  style={{ background: 'none', border: 'none', color: '#1D4ED8', cursor: 'pointer' }}
+                >
+                  <FiX />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
         {loading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: '#6B7280' }}>
             <div style={{ display: 'inline-block', width: '32px', height: '32px', border: '3px solid #E5E7EB', borderTopColor: '#003366', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: '12px' }} />
@@ -221,41 +295,71 @@ export default function Requests() {
               </tr>
             </thead>
             <tbody>
-              {schedules.map(s => (
-                <tr key={s._id}>
-                  <td style={{ fontFamily: 'monospace', fontWeight: '600' }}>{s.scheduleId}</td>
-                  <td style={{ fontWeight: '500' }}>{s.sectionName || s.sectionId}</td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                      {(s.departments || []).map((d, i) => (
-                        <span key={i} style={{
-                          padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '600',
-                          background: DEPARTMENTS[d]?.bg || '#F3F4F6', color: DEPARTMENTS[d]?.color || '#6B7280',
-                        }}>{DEPARTMENTS[d]?.label || d}</span>
-                      ))}
-                    </div>
-                  </td>
-                  <td style={{ fontSize: '13px' }}>
-                    {s.assignedWindow?.start ? new Date(s.assignedWindow.start).toLocaleString('en-IN') : 'N/A'}
-                  </td>
-                  <td style={{ fontSize: '13px', fontWeight: '600' }}>{formatDuration(s.totalDurationMinutes)}</td>
-                  <td style={{ fontWeight: '700', color: '#003366' }}>{Math.round((s.optimizerScore || 0) * 100)}%</td>
-                  <td>
-                    {canApprove ? (
-                      <div style={{ display: 'flex', gap: '6px' }}>
-                        <button className="btn btn-green btn-sm" onClick={() => handleApprove(s._id)} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <FiCheck /> Approve
-                        </button>
-                        <button className="btn btn-danger btn-sm" onClick={() => handleReject(s._id)} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <FiX /> Reject
-                        </button>
-                      </div>
-                    ) : (
-                      <span style={{ fontSize: '12px', color: '#9CA3AF' }}>Review only</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {schedules
+                .filter(s => {
+                  if (!searchTerm) return true;
+                  const q = searchTerm.toLowerCase();
+                  const sId = (s.scheduleId || '').toLowerCase();
+                  const sec = (s.sectionName || s.sectionId || '').toLowerCase();
+                  const depts = (s.departments || []).join(' ').toLowerCase();
+                  return sId.includes(q) || sec.includes(q) || depts.includes(q);
+                })
+                .map(s => {
+                  const isMatch = targetSearch && ((s.scheduleId || '').toLowerCase().includes(targetSearch.toLowerCase()) || (s.sectionId || '').toLowerCase().includes(targetSearch.toLowerCase()));
+
+                  return (
+                    <tr
+                      key={s._id}
+                      onClick={() => navigate(`/schedules?scheduleId=${encodeURIComponent(s.scheduleId)}`)}
+                      style={{
+                        cursor: 'pointer',
+                        background: isMatch ? '#EFF6FF' : 'transparent',
+                        borderLeft: isMatch ? '4px solid #003366' : '4px solid transparent',
+                        transition: 'background 0.15s',
+                      }}
+                      title="Click to view detailed timeline & conflicts in Schedules"
+                      onMouseEnter={(e) => { e.currentTarget.style.background = '#F0F9FF'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = isMatch ? '#EFF6FF' : 'transparent'; }}
+                    >
+                      <td style={{ fontFamily: 'monospace', fontWeight: '700', color: '#003366' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span>{s.scheduleId}</span>
+                          <FiExternalLink style={{ fontSize: '11px', opacity: 0.7 }} />
+                        </div>
+                      </td>
+                      <td style={{ fontWeight: '500' }}>{s.sectionName || s.sectionId}</td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                          {(s.departments || []).map((d, i) => (
+                            <span key={i} style={{
+                              padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '600',
+                              background: DEPARTMENTS[d]?.bg || '#F3F4F6', color: DEPARTMENTS[d]?.color || '#6B7280',
+                            }}>{DEPARTMENTS[d]?.label || d}</span>
+                          ))}
+                        </div>
+                      </td>
+                      <td style={{ fontSize: '13px' }}>
+                        {s.assignedWindow?.start ? new Date(s.assignedWindow.start).toLocaleString('en-IN') : 'N/A'}
+                      </td>
+                      <td style={{ fontSize: '13px', fontWeight: '600' }}>{formatDuration(s.totalDurationMinutes)}</td>
+                      <td style={{ fontWeight: '700', color: '#003366' }}>{Math.round((s.optimizerScore || 0) * 100)}%</td>
+                      <td onClick={e => e.stopPropagation()}>
+                        {canApprove ? (
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button className="btn btn-green btn-sm" onClick={() => handleApprove(s._id)} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <FiCheck /> Approve
+                            </button>
+                            <button className="btn btn-danger btn-sm" onClick={() => handleReject(s._id)} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <FiX /> Reject
+                            </button>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: '12px', color: '#9CA3AF' }}>Review only</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
             </tbody>
           </table>
         ) : (

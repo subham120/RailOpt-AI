@@ -10,6 +10,7 @@ import {
   FiBarChart2,
   FiChevronLeft,
   FiMap,
+  FiMessageSquare,
 } from 'react-icons/fi';
 
 const ICONS = {
@@ -20,6 +21,7 @@ const ICONS = {
   calendar: FiCalendar,
   request: FiClipboard,
   report: FiBarChart2,
+  assistant: FiMessageSquare,
 };
 
 export default function Sidebar({ collapsed, onToggle }) {
@@ -85,6 +87,7 @@ export default function Sidebar({ collapsed, onToggle }) {
               key={item.path}
               to={item.path}
               end={item.path === '/'}
+              className={({ isActive }) => (isActive ? 'sidebar-nav-link active' : 'sidebar-nav-link')}
               style={({ isActive }) => ({
                 display: 'flex',
                 alignItems: 'center',

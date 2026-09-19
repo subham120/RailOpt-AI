@@ -1,32 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CorridorMap from '../components/map/CorridorMap';
+import { useAuth } from '../context/AuthContext';
+import { corridorAPI } from '../services/api';
 import { FiMap, FiSearch, FiCalendar, FiActivity, FiShield, FiArrowRight } from 'react-icons/fi';
-
-const CORRIDOR_DETAILS = [
-  { sectionId: 'NDLS-GZB', name: 'New Delhi – Ghaziabad', lineType: 'Quadruple', km: 32, density: 'High', status: 'maintenance', block: 'Joint OHE + Track Block (00:30–04:30)', speed: '130 km/h', zone: 'NR' },
-  { sectionId: 'GZB-CNB', name: 'Ghaziabad – Kanpur Central', lineType: 'Double (Auto)', km: 440, density: 'High', status: 'scheduled', block: 'Night Window 01:00–04:00', speed: '130 km/h', zone: 'NCR' },
-  { sectionId: 'CNB-ALD', name: 'Kanpur – Prayagraj', lineType: 'Double', km: 198, density: 'Medium', status: 'open', block: 'Clear for Traffic', speed: '130 km/h', zone: 'NCR' },
-  { sectionId: 'ALD-MGS', name: 'Prayagraj – DDU / Mughal Sarai', lineType: 'Double', km: 128, density: 'High', status: 'open', block: 'Clear for Traffic', speed: '130 km/h', zone: 'ECR' },
-  { sectionId: 'NDLS-NZM', name: 'New Delhi – Hazrat Nizamuddin', lineType: 'Quadruple', km: 8, density: 'High', status: 'open', block: 'Clear for Traffic', speed: '110 km/h', zone: 'NR' },
-  { sectionId: 'NZM-MTJ', name: 'Nizamuddin – Mathura', lineType: 'Double', km: 141, density: 'High', status: 'maintenance', block: 'S&T Interlocking Relay Block', speed: '160 km/h', zone: 'NCR' },
-  { sectionId: 'MTJ-AGC', name: 'Mathura – Agra Cantt', lineType: 'Double', km: 54, density: 'Medium', status: 'open', block: 'Clear for Traffic', speed: '160 km/h', zone: 'NCR' },
-  { sectionId: 'LKO-BSB', name: 'Lucknow – Varanasi', lineType: 'Double', km: 286, density: 'Medium', status: 'open', block: 'Clear for Traffic', speed: '110 km/h', zone: 'NR' },
-  { sectionId: 'CNB-LKO', name: 'Kanpur – Lucknow', lineType: 'Double', km: 72, density: 'High', status: 'scheduled', block: 'OHE Sag Inspection Window', speed: '110 km/h', zone: 'NR' },
-  { sectionId: 'AMB-CDG', name: 'Ambala – Chandigarh', lineType: 'Double', km: 46, density: 'Medium', status: 'open', block: 'Clear for Traffic', speed: '110 km/h', zone: 'NR' },
-  { sectionId: 'DDN-HW', name: 'Dehradun – Haridwar', lineType: 'Single', km: 52, density: 'Medium', status: 'open', block: 'Clear for Traffic', speed: '90 km/h', zone: 'NR' },
-  { sectionId: 'HW-RK', name: 'Haridwar – Roorkee', lineType: 'Single', km: 30, density: 'Low', status: 'open', block: 'Clear for Traffic', speed: '100 km/h', zone: 'NR' },
-  { sectionId: 'DLI-RWL', name: 'Delhi – Rewari', lineType: 'Double', km: 82, density: 'Low', status: 'open', block: 'Clear for Traffic', speed: '110 km/h', zone: 'NWR' },
-];
 
 export default function CorridorMapPage() {
   const navigate = useNavigate();
+  const { activeZone } = useAuth();
+  const [corridors, setCorridors] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [densityFilter, setDensityFilter] = useState('');
 
-  const filteredCorridors = CORRIDOR_DETAILS.filter(c => {
-    const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) || c.sectionId.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDensity = densityFilter ? c.density === densityFilter : true;
+  useEffect(() => {
+    const fetchCorridors = async () => {
+      setLoading(true);
+      try {
+        const res = await corridorAPI.getAll();
+        const data = res.data.data || [];
+        setCorridors(data.map(c => ({
+          sectionId: c.sectionId || c.section_id,
+          name: c.sectionName || c.section_name,
+          lineType: c.lineType || c.line_type || 'Double Track',
+          km: c.totalKm || c.total_km || 100,
+          density: (c.trafficDensity || c.traffic_density || 'High').charAt(0).toUpperCase() + (c.trafficDensity || c.traffic_density || 'High').slice(1),
+          status: 'open',
+          block: 'Clear for Traffic',
+          speed: '130 km/h',
+          zone: c.zoneCode || c.zone_code || c.zone || 'NR',
+        })));
+      } catch (err) {
+        console.error('Failed to load corridors:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCorridors();
+  }, [activeZone]);
+
+  const filteredCorridors = corridors.filter(c => {
+    const matchesSearch = (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.sectionId || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDensity = densityFilter ? c.density.toLowerCase() === densityFilter.toLowerCase() : true;
     return matchesSearch && matchesDensity;
   });
 
@@ -108,6 +123,7 @@ export default function CorridorMapPage() {
               <th>Traffic Density</th>
               <th>Possession Status</th>
               <th>Zone</th>
+              <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -116,7 +132,14 @@ export default function CorridorMapPage() {
               const isSched = c.status === 'scheduled';
 
               return (
-                <tr key={i}>
+                <tr
+                  key={i}
+                  onClick={() => navigate(`/schedules?corridor=${encodeURIComponent(c.sectionId)}`)}
+                  style={{ cursor: 'pointer', transition: 'background 0.15s' }}
+                  title={`Click to view scheduled blocks on ${c.sectionId}`}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#F0F9FF'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                >
                   <td style={{ fontFamily: 'monospace', fontWeight: '700', color: '#003366' }}>{c.sectionId}</td>
                   <td style={{ fontWeight: '600', color: '#1F2937' }}>{c.name}</td>
                   <td>
@@ -145,6 +168,23 @@ export default function CorridorMapPage() {
                     </span>
                   </td>
                   <td style={{ fontSize: '12px', fontWeight: '600', color: '#64748B' }}>{c.zone}</td>
+                  <td style={{ textAlign: 'right' }}>
+                    <button
+                      className="btn btn-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/schedules?corridor=${encodeURIComponent(c.sectionId)}`);
+                      }}
+                      style={{
+                        padding: '4px 10px', fontSize: '11px', fontWeight: '700',
+                        background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE',
+                        borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '4px'
+                      }}
+                    >
+                      <FiCalendar />
+                      <span>Schedules</span>
+                    </button>
+                  </td>
                 </tr>
               );
             })}
