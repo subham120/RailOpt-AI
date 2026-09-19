@@ -16,6 +16,8 @@ services:
         sync: false
       - key: CORS_ORIGINS
         value: "https://railopt-frontend.onrender.com"
+      - key: PYTHON_VERSION
+        value: "3.11.9"
       - key: ENVIRONMENT
         value: "production"
       - key: DEBUG
