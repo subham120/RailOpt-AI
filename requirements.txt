@@ -1,0 +1,2 @@
+# RailOpt AI v2 — Python Backend Requirements (Root alias)
+-r backend/requirements.txt
