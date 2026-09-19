@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str | None = None
 
     # Cross-Origin Resource Sharing
-    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173"]
+    CORS_ORIGINS: str | list[str] = ["http://localhost:3000", "http://localhost:5173"]
 
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
@@ -41,19 +41,25 @@ class Settings(BaseSettings):
             return v.replace("postgres://", "postgresql://", 1)
         return str(v)
 
-    @field_validator("CORS_ORIGINS", mode="before")
+    @field_validator("CORS_ORIGINS", mode="after")
     @classmethod
     def parse_cors_origins(cls, v: Any) -> list[str]:
-        """Support comma-separated strings or JSON lists for CORS origins."""
+        """Support comma-separated strings, JSON lists, or wildcard * for CORS origins."""
         if isinstance(v, str):
             v = v.strip()
+            if v == "*":
+                return ["*"]
             if v.startswith("[") and v.endswith("]"):
                 try:
-                    return json.loads(v)
-                except json.JSONDecodeError:
+                    parsed = json.loads(v)
+                    if isinstance(parsed, list):
+                        return [str(x).strip() for x in parsed if str(x).strip()]
+                except Exception:
                     pass
             return [origin.strip() for origin in v.split(",") if origin.strip()]
-        return v
+        if isinstance(v, list):
+            return [str(origin).strip() for origin in v if str(origin).strip()]
+        return ["*"]
 
     @field_validator("SECRET_KEY")
     @classmethod
