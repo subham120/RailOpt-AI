@@ -125,55 +125,60 @@ function AppLayout() {
 
   return (
     <div style={{
-      height: isAssistant ? '100vh' : undefined,
-      minHeight: isAssistant ? undefined : '100vh',
+      height: '100vh',
+      minHeight: '100vh',
+      width: '100%',
+      minWidth: '1400px',
       display: 'flex',
       flexDirection: 'column',
-      overflow: isAssistant ? 'hidden' : undefined,
+      overflow: 'hidden',
     }}>
       <Header />
       <div style={{
         display: 'flex',
         flex: 1,
         minHeight: 0,
-        overflow: isAssistant ? 'hidden' : undefined,
+        overflow: 'hidden',
       }}>
         <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
         <main
           id="main-content"
           style={{
             flex: 1,
-            height: isAssistant ? '100%' : undefined,
-            minHeight: isAssistant ? 0 : 'calc(100vh - 88px)',
-            overflow: isAssistant ? 'hidden' : 'auto',
+            minHeight: 0,
+            height: '100%',
+            overflowY: 'auto',
+            overflowX: 'auto',
             background: '#F4F6F8',
-            display: isAssistant ? 'flex' : undefined,
-            flexDirection: isAssistant ? 'column' : undefined,
+            display: 'flex',
+            flexDirection: 'column',
           }}
         >
-          <Routes>
-            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/corridor-map" element={<ProtectedRoute><CorridorMapPage /></ProtectedRoute>} />
-            <Route path="/data-integration" element={<ProtectedRoute><DataIntegration /></ProtectedRoute>} />
-            <Route path="/prioritization" element={
-              <ProtectedRoute roles={['admin', 'section_controller']}>
-                <Prioritization />
-              </ProtectedRoute>
-            } />
-            <Route path="/schedules" element={<ProtectedRoute><Schedules /></ProtectedRoute>} />
-            <Route path="/requests" element={<ProtectedRoute><Requests /></ProtectedRoute>} />
-            <Route path="/reports" element={
-              <ProtectedRoute roles={['admin', 'section_controller']}>
-                <Reports />
-              </ProtectedRoute>
-            } />
-            <Route path="/assistant" element={<ProtectedRoute><AssistantPage /></ProtectedRoute>} />
-            <Route path="/login" element={<Navigate to="/" replace />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          <div style={{ flex: 1, minHeight: isAssistant ? '100%' : undefined, display: isAssistant ? 'flex' : undefined, flexDirection: isAssistant ? 'column' : undefined }}>
+            <Routes>
+              <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/corridor-map" element={<ProtectedRoute><CorridorMapPage /></ProtectedRoute>} />
+              <Route path="/data-integration" element={<ProtectedRoute><DataIntegration /></ProtectedRoute>} />
+              <Route path="/prioritization" element={
+                <ProtectedRoute roles={['admin', 'section_controller']}>
+                  <Prioritization />
+                </ProtectedRoute>
+              } />
+              <Route path="/schedules" element={<ProtectedRoute><Schedules /></ProtectedRoute>} />
+              <Route path="/requests" element={<ProtectedRoute><Requests /></ProtectedRoute>} />
+              <Route path="/reports" element={
+                <ProtectedRoute roles={['admin', 'section_controller']}>
+                  <Reports />
+                </ProtectedRoute>
+              } />
+              <Route path="/assistant" element={<ProtectedRoute><AssistantPage /></ProtectedRoute>} />
+              <Route path="/login" element={<Navigate to="/" replace />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </div>
+          {!isAssistant && <Footer />}
         </main>
       </div>
-      {!isAssistant && <Footer />}
     </div>
   );
 }
