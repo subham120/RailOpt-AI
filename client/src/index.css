@@ -60,7 +60,7 @@
 
 /* ─── Base HTML/Body Canvas (Desktop View Lock) ─── */
 html, body {
-  min-width: 1280px;
+  min-width: 1400px;
   overflow-x: auto;
   font-family: var(--font-sans);
   background-color: var(--color-neutral-bg);
@@ -70,7 +70,7 @@ html, body {
 }
 
 #root {
-  min-width: 1280px;
+  min-width: 1400px;
 }
 
 
