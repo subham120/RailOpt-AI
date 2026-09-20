@@ -569,3 +569,57 @@ body {
   }
 }
 
+/* ─── Mobile View Text Magnification for Zoomed Desktop Mode ─── */
+html.mobile-zoomed-view,
+html.mobile-zoomed-view body {
+  font-size: 18px !important;
+  -webkit-text-size-adjust: 100%;
+}
+
+html.mobile-zoomed-view button,
+html.mobile-zoomed-view input,
+html.mobile-zoomed-view select,
+html.mobile-zoomed-view textarea {
+  font-size: 16px !important;
+}
+
+html.mobile-zoomed-view table th {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  padding: 12px 14px !important;
+}
+
+html.mobile-zoomed-view table td {
+  font-size: 15px !important;
+  padding: 12px 14px !important;
+}
+
+html.mobile-zoomed-view aside nav a {
+  padding-top: 14px !important;
+  padding-bottom: 14px !important;
+}
+
+html.mobile-zoomed-view aside nav a span {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+}
+
+html.mobile-zoomed-view h1 {
+  font-size: 1.5em !important;
+}
+
+html.mobile-zoomed-view h2 {
+  font-size: 1.3em !important;
+}
+
+html.mobile-zoomed-view h3 {
+  font-size: 1.15em !important;
+}
+
+html.mobile-zoomed-view p,
+html.mobile-zoomed-view span,
+html.mobile-zoomed-view label {
+  font-size: 1.05em;
+}
+
+

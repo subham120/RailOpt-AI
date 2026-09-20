@@ -10,10 +10,15 @@
         try {
           var targetWidth = 1400;
           var screenW = window.screen.width || 360;
+          var isMobile = screenW <= 820 || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
           var scale = Math.min(1.0, Math.max(0.12, screenW / targetWidth));
           var meta = document.getElementById('viewport-meta');
           if (meta) {
             meta.setAttribute('content', 'width=' + targetWidth + ', initial-scale=' + scale.toFixed(3) + ', minimum-scale=0.1, maximum-scale=3.0, user-scalable=yes');
+          }
+          if (isMobile) {
+            document.documentElement.classList.add('mobile-zoomed-view');
+            document.documentElement.style.fontSize = '20px';
           }
         } catch (e) {}
       })();
